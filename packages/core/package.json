@@ -1,0 +1,5 @@
+{
+  "name": "@obsidian-blog/core",
+  "private": true,
+  "type": "module"
+}

@@ -1,0 +1,25 @@
+#!/bin/sh
+# 새 워크트리에 gitignore된 비공개 문서를 메인 체크아웃의 원본으로 심볼릭 링크함
+git_dir=$(git rev-parse --absolute-git-dir)
+common_dir=$(cd "$(git rev-parse --git-common-dir)" && pwd)
+
+# 메인 체크아웃이면 할 일 없음
+if [ "$git_dir" = "$common_dir" ]; then
+  exit 0
+fi
+
+link=".claude/docs/private"
+target="$(dirname "$common_dir")/.claude/docs/private"
+
+if [ -e "$link" ] || [ -L "$link" ]; then
+  exit 0
+fi
+
+if [ ! -d "$target" ]; then
+  echo "post-checkout: 원본 비공개 문서가 없음: $target" >&2
+  exit 0
+fi
+
+mkdir -p .claude/docs
+ln -s "$target" "$link"
+echo "post-checkout: 비공개 문서 링크를 만듦: $link -> $target"
