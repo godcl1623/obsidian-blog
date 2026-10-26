@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "pnpm@12.12.1",
   "scripts": {
-    "verify": "node scripts/check-node.mjs && prettier --check . && eslint . && tsc -p tsconfig.json && vitest run --passWithNoTests",
+    "verify": "node scripts/check-node.mjs && prettier --check . && eslint . && tsc -p tsconfig.json && vitest run",
     "format": "prettier --write ."
   },
   "devDependencies": {
