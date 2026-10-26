@@ -26,6 +26,22 @@ export default defineConfig(
           patterns: [{ group: ["node:*"], message: coreMessage }],
         },
       ],
+      "no-restricted-globals": [
+        "error",
+        { name: "process", message: coreMessage },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.object.name='Date'][callee.property.name='now']",
+          message: coreMessage,
+        },
+        {
+          selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+          message: coreMessage,
+        },
+      ],
     },
   },
 );
