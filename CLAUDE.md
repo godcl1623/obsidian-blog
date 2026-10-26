@@ -61,6 +61,7 @@ Obsidian 볼트의 공개 노트만 골라 기술 블로그로 내보내는 프�
 ## 브랜치
 
 - 기능 브랜치는 `develop`에서 따고 `develop`으로 PR을 올린다
+- GitHub 기본 브랜치는 `main`이므로 PR을 만들 때 `gh pr create --base develop`처럼 base를 반드시 명시한다
 - `main` 병합은 곧 배포다. `develop`에서 `main`으로의 병합은 사람이 한다
 - 커밋 메시지 첫 줄은 `<접두어>: <본문>` 형식으로 쓴다 (접두어 예: feat, fix, chore). 필요하면 둘째 줄부터 내용을 덧붙인다
 
