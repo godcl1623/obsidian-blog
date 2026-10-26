@@ -1,2 +1,3 @@
 .claude/
 pnpm-lock.yaml
+packages/extractor/test/fixtures/
