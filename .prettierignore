@@ -1,3 +1,4 @@
-.claude/
+.claude/*
+!.claude/settings.json
 pnpm-lock.yaml
 packages/extractor/test/fixtures/
