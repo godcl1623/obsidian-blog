@@ -1,7 +1,13 @@
 // SessionEnd hook: 이 세션의 진행 기록이 없으면 뼈대를 만듦
 // 비공개 문서 폴더가 없으면 아무것도 하지 않음 (공개 저장소에 쓰지 않게)
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -14,6 +20,7 @@ if (!existsSync(new URL("../.claude/docs/private", import.meta.url))) {
   process.exit(0);
 }
 
+mkdirSync(progressDir, { recursive: true });
 const { session_id: sessionId } = JSON.parse(readFileSync(0, "utf8"));
 const recorded = readdirSync(progressDir)
   .filter((name) => name.endsWith(".md"))

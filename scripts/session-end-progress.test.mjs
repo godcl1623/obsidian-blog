@@ -72,3 +72,38 @@ test("비공개 폴더가 없으면 아무것도 만들지 않음", () => {
   run();
   expect(readdirSync(dir).sort()).toEqual([".git", "scripts"]);
 });
+
+test("비공개 폴더에 progress 폴더가 없으면 만들고 뼈대를 씀", () => {
+  mkdirSync(join(dir, ".claude", "docs", "private"), { recursive: true });
+  run();
+  expect(readdirSync(progress())).toHaveLength(1);
+});
+
+test("같은 분, 같은 주제의 파일이 있으면 세션 id 앞부분을 붙임", () => {
+  mkdirSync(progress(), { recursive: true });
+  // 실행 중에 분이 바뀌어도 겹치게 지금과 1분 뒤 이름을 모두 만들어 둠
+  const pad = (n) => String(n).padStart(2, "0");
+  for (const offset of [0, 60_000]) {
+    const t = new Date(Date.now() + offset);
+    const name = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}-${pad(t.getHours())}${pad(t.getMinutes())}-BLOG-99.md`;
+    writeFileSync(join(progress(), name), "- 세션: 다른-세션\n");
+  }
+  run();
+  const created = readdirSync(progress()).filter((name) =>
+    name.endsWith("-BLOG-99-11111111.md"),
+  );
+  expect(created).toHaveLength(1);
+});
+
+test("브랜치에 티켓 키가 없으면 주제를 session으로 씀", () => {
+  execFileSync("git", ["symbolic-ref", "HEAD", "refs/heads/main"], {
+    cwd: dir,
+  });
+  mkdirSync(progress(), { recursive: true });
+  run();
+  const [created] = readdirSync(progress());
+  expect(created).toMatch(/^\d{4}-\d{2}-\d{2}-\d{4}-session\.md$/);
+  expect(readFileSync(join(progress(), created), "utf8")).toContain(
+    "- 브랜치: main",
+  );
+});
