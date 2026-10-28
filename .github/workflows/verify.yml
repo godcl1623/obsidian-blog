@@ -20,3 +20,13 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
+
+  # develop으로 오는 PR의 브랜치 이름이 feature/{티켓키}-{짧은-설명}인지 봄 (CLAUDE.md 작업 흐름)
+  branch-name:
+    if: github.base_ref == 'develop'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          [[ "$HEAD_REF" =~ ^feature/BLOG-[0-9]+-[a-z0-9-]+$ ]] || { echo "브랜치 이름이 feature/BLOG-<번호>-<설명>이 아님: $HEAD_REF"; exit 1; }
