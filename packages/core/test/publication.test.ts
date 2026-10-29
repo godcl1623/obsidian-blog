@@ -298,6 +298,18 @@ describe("frontmatter를 YAML로 읽을 수 없으면 보류", () => {
       expected: held(BROKEN, 1),
     },
     {
+      name: "frontmatter 중간의 ... 줄 → 보류(줄 번호)",
+      basis: "4-2 4절",
+      content: note("publish: true\n...\nprivate: true"),
+      expected: held(BROKEN, 4),
+    },
+    {
+      name: "frontmatter 중간의 --- 뒤 내용 줄 → 보류(줄 번호)",
+      basis: "4-2 4절",
+      content: note("publish: true\n--- private: true"),
+      expected: held(BROKEN, 3),
+    },
+    {
       name: "읽을 수 없으면 private: true여도 보류",
       basis: "4-2 4절",
       content: "---\nprivate: true\ntitle: [닫히지 않음\n---\n본문\n",
