@@ -17,6 +17,7 @@ const held = (reason: string, line?: number): Decision =>
 const BROKEN = "frontmatter를 읽을 수 없음";
 const UNAPPROVED = "승인 없음";
 const MERGE = "병합 키(<<)는 쓰지 않음";
+const KEY = "키는 이름만 씀";
 
 type Row = {
   name: string;
@@ -364,6 +365,85 @@ describe("최상위 병합 키(<<)가 있으면 보류", () => {
       name: "최상위가 아닌 곳의 병합 키 → 공개",
       basis: "2절, 4-1 (0)",
       content: note("publish: true\nmeta: {<<: {a: 1}}"),
+      expected: PUBLIC,
+    },
+  ]);
+});
+
+// 별칭 키와 복합 키는 publish, private를 가릴 수 있어 별개 사유로 보류함 (2026-10-29 사용자 결정, 인수인계 가정 12)
+describe("최상위 키가 이름이 아니면(별칭 키, 복합 키) 보류", () => {
+  table([
+    {
+      name: "별칭 키로 private: true, 맨 키 publish: true → 보류(키)",
+      basis: "2절, 4-2 4절",
+      content: note("x: &k private\n*k : true\npublish: true"),
+      expected: held(KEY, 3),
+    },
+    {
+      name: "맨 키 publish: true, 별칭 키로 publish: false → 보류(키)",
+      basis: "2절, 4-2 4절",
+      content: note("x: &k publish\npublish: true\n*k : false"),
+      expected: held(KEY, 4),
+    },
+    {
+      name: "별칭 키로만 publish: true → 보류(키)",
+      basis: "2절, 4-2 4절",
+      content: note("x: &k publish\n*k : true"),
+      expected: held(KEY, 3),
+    },
+    {
+      name: "복합 키(목록) → 보류(키)",
+      basis: "2절, 4-2 4절",
+      content: note("? [private]\n: true\npublish: true"),
+      expected: held(KEY, 2),
+    },
+    {
+      name: "복합 키(묶음) → 보류(키)",
+      basis: "2절, 4-2 4절",
+      content: note("publish: true\n? {private: x}\n: true"),
+      expected: held(KEY, 3),
+    },
+    {
+      name: "별칭 키, 승인 없음 → 보류(키)",
+      basis: "2절, 4-2 4절",
+      content: note("x: &k a\n*k : 1\npublish: true"),
+      approvals: [],
+      expected: held(KEY, 3),
+    },
+    {
+      name: "private: true가 있어도 별칭 키가 있으면 → 보류(키)",
+      basis: "2절, 4-2 4절",
+      content: note("private: true\nx: &k a\n*k : 1"),
+      expected: held(KEY, 4),
+    },
+    {
+      name: "별칭 키가 있어도 YAML을 읽을 수 없으면 → 보류(읽을 수 없음)",
+      basis: "4-2 4절",
+      content: note("x: &k a\n*k : 1\ntitle: [닫히지 않음"),
+      expected: held(BROKEN, 4),
+    },
+    {
+      name: "별칭 키와 병합 키가 함께 있으면 먼저 나온 키의 사유 → 보류(병합 키)",
+      basis: "2절, 4-2 4절",
+      content: note("<<: {a: 1}\nx: &k a\n*k : 1"),
+      expected: held(MERGE, 2),
+    },
+    {
+      name: "병합 키보다 별칭 키가 먼저 나오면 → 보류(키)",
+      basis: "2절, 4-2 4절",
+      content: note("x: &k a\n*k : 1\n<<: {a: 1}"),
+      expected: held(KEY, 3),
+    },
+    {
+      name: "값이 별칭인 것은 키 문제가 아님: publish: *t → 비공개",
+      basis: "2절, 4-2 4절",
+      content: note("t: &t true\npublish: *t"),
+      expected: PRIVATE,
+    },
+    {
+      name: "빈 키(: 값)는 이름이 빈 키로 봄 → 공개",
+      basis: "2절, 4-1 (0)",
+      content: note(": x\npublish: true"),
       expected: PUBLIC,
     },
   ]);
