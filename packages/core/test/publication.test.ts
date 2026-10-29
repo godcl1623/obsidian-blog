@@ -150,6 +150,48 @@ describe("private: true는 publish보다 우선", () => {
       expected: PRIVATE,
     },
     {
+      name: '"private ": true (키 뒤 공백) → 비공개',
+      basis: "2절 fail-closed",
+      content: note('"private ": true\npublish: true'),
+      expected: PRIVATE,
+    },
+    {
+      name: '" private": true (키 앞 공백) → 비공개',
+      basis: "2절 fail-closed",
+      content: note('" private": true\npublish: true'),
+      expected: PRIVATE,
+    },
+    {
+      name: '"pri vate": true (키 중간 공백) → 비공개',
+      basis: "2절 fail-closed",
+      content: note('"pri vate": true\npublish: true'),
+      expected: PRIVATE,
+    },
+    {
+      name: '"private\\t": true (키 뒤 탭) → 비공개',
+      basis: "2절 fail-closed",
+      content: note('"private\\t": true\npublish: true'),
+      expected: PRIVATE,
+    },
+    {
+      name: "ｐｒｉｖａｔｅ: true (전각 키) → 비공개",
+      basis: "2절 fail-closed",
+      content: note("ｐｒｉｖａｔｅ: true\npublish: true"),
+      expected: PRIVATE,
+    },
+    {
+      name: "PRİVATE: true (터키어 İ 키) → 비공개",
+      basis: "2절 fail-closed",
+      content: note("PRİVATE: true\npublish: true"),
+      expected: PRIVATE,
+    },
+    {
+      name: '"private ": false (키 뒤 공백, false) → 비공개',
+      basis: "2절 fail-closed",
+      content: note('"private ": false\npublish: true'),
+      expected: PRIVATE,
+    },
+    {
       name: "Private: false (키 대소문자 다름) → 비공개",
       basis: "2절 fail-closed",
       content: note("publish: true\nPrivate: false"),
@@ -224,6 +266,24 @@ describe("공개 값이 애매하면 알림 없이 비공개", () => {
       name: "publish: true와 Publish: false가 함께 있음 → 비공개",
       basis: "2절, 4-2 4절",
       content: note("publish: true\nPublish: false"),
+      expected: PRIVATE,
+    },
+    {
+      name: '"publish ": true (키 뒤 공백) → 비공개',
+      basis: "2절, 4-2 4절",
+      content: note('"publish ": true'),
+      expected: PRIVATE,
+    },
+    {
+      name: "ｐｕｂｌｉｓｈ: true (전각 키) → 비공개",
+      basis: "2절, 4-2 4절",
+      content: note("ｐｕｂｌｉｓｈ: true"),
+      expected: PRIVATE,
+    },
+    {
+      name: 'publish: true와 "publish ": false가 함께 있음 → 비공개',
+      basis: "2절, 4-2 4절",
+      content: note('publish: true\n"publish ": false'),
       expected: PRIVATE,
     },
     {

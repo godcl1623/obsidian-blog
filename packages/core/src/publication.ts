@@ -51,8 +51,13 @@ export function decidePublication(
   const fields = map.items.map(
     ({ key, value }) => [String((key as Scalar).value), value] as const,
   );
-  const named = (name: string) =>
-    fields.filter(([key]) => key.toLowerCase() === name);
+  // 전각, 결합 문자(터키어 İ 등), 공백, 대소문자만 다른 키는 같은 계열로 봄. 철자 오타는 가리지 않음
+  const fold = (key: string) =>
+    key
+      .normalize("NFKD")
+      .replace(/\p{M}|\s/gu, "")
+      .toLowerCase();
+  const named = (name: string) => fields.filter(([key]) => fold(key) === name);
   // 원문이 소문자 true/false인 boolean만 인정함. True, "true", yes 등과 대소문자가 다른 키는 애매한 값으로 봄
   const literal = (node: unknown, word: "true" | "false") =>
     isScalar(node) && node.source === word && node.value === (word === "true");
