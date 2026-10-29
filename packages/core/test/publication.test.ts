@@ -16,8 +16,6 @@ const held = (reason: string, line?: number): Decision =>
     : { kind: "held", reason, line };
 const BROKEN = "frontmatter를 읽을 수 없음";
 const UNAPPROVED = "승인 없음";
-const MERGE = "병합 키(<<)는 쓰지 않음";
-const KEY = "키는 이름만 씀";
 
 type Row = {
   name: string;
@@ -36,7 +34,7 @@ const table = (rows: Row[]) =>
     },
   );
 
-describe("공개 조건: publish: true와 승인 기록이 모두 있어야 공개", () => {
+describe("공개 조건: 정확한 publish: true 줄과 승인 기록이 모두 있어야 공개", () => {
   table([
     {
       name: "publish: true, 승인 있음 → 공개",
@@ -45,9 +43,17 @@ describe("공개 조건: publish: true와 승인 기록이 모두 있어야 공�
       expected: PUBLIC,
     },
     {
-      name: "publish: true, 다른 필드와 함께 → 공개",
+      name: "publish: true가 다른 필드 뒤에 있음 → 공개",
       basis: "2절, 4-1 (0)",
-      content: note("title: 제목\npublish: true\ntags: [a]"),
+      content: note(
+        "title: 제목\ntags: [a]\ncreated: 2026-10-29\npublish: true",
+      ),
+      expected: PUBLIC,
+    },
+    {
+      name: "publish: true가 다른 필드 앞에 있음 → 공개",
+      basis: "2절, 4-1 (0)",
+      content: note("publish: true\ntitle: 제목\ntags: [a]"),
       expected: PUBLIC,
     },
     {
@@ -57,9 +63,9 @@ describe("공개 조건: publish: true와 승인 기록이 모두 있어야 공�
       expected: PUBLIC,
     },
     {
-      name: '따옴표 키 "publish": true, 승인 있음 → 공개',
-      basis: "2절, 4-1 (0)",
-      content: note('"publish": true'),
+      name: "publish: true, private: false → 공개",
+      basis: "2절",
+      content: note("publish: true\nprivate: false"),
       expected: PUBLIC,
     },
     {
@@ -104,12 +110,18 @@ describe("공개 조건: publish: true와 승인 기록이 모두 있어야 공�
   ]);
 });
 
-describe("private: true는 publish보다 우선", () => {
+describe("정확한 private: true 줄은 publish보다 우선", () => {
   table([
     {
       name: "private: true, publish: true, 승인 있음 → 비공개",
       basis: "2절",
       content: note("publish: true\nprivate: true"),
+      expected: PRIVATE,
+    },
+    {
+      name: "private: true가 publish: true보다 앞에 있음 → 비공개",
+      basis: "2절",
+      content: note("private: true\ntitle: 제목\npublish: true"),
       expected: PRIVATE,
     },
     {
@@ -120,176 +132,106 @@ describe("private: true는 publish보다 우선", () => {
       expected: PRIVATE,
     },
     {
-      name: "private: false, publish: true, 승인 있음 → 공개",
+      name: "private: true만 있음 → 비공개",
       basis: "2절",
-      content: note("publish: true\nprivate: false"),
-      expected: PUBLIC,
-    },
-    {
-      name: 'private: "true" 문자열 → 비공개',
-      basis: "2절 fail-closed",
-      content: note('publish: true\nprivate: "true"'),
-      expected: PRIVATE,
-    },
-    {
-      name: "private: yes → 비공개",
-      basis: "2절 fail-closed",
-      content: note("publish: true\nprivate: yes"),
-      expected: PRIVATE,
-    },
-    {
-      name: "Private: true (키 대소문자 다름) → 비공개",
-      basis: "2절 fail-closed",
-      content: note("publish: true\nPrivate: true"),
-      expected: PRIVATE,
-    },
-    {
-      name: "따옴표 키 'private': true → 비공개",
-      basis: "2절",
-      content: note("'private': true\npublish: true"),
-      expected: PRIVATE,
-    },
-    {
-      name: '"private ": true (키 뒤 공백) → 비공개',
-      basis: "2절 fail-closed",
-      content: note('"private ": true\npublish: true'),
-      expected: PRIVATE,
-    },
-    {
-      name: '" private": true (키 앞 공백) → 비공개',
-      basis: "2절 fail-closed",
-      content: note('" private": true\npublish: true'),
-      expected: PRIVATE,
-    },
-    {
-      name: '"pri vate": true (키 중간 공백) → 비공개',
-      basis: "2절 fail-closed",
-      content: note('"pri vate": true\npublish: true'),
-      expected: PRIVATE,
-    },
-    {
-      name: '"private\\t": true (키 뒤 탭) → 비공개',
-      basis: "2절 fail-closed",
-      content: note('"private\\t": true\npublish: true'),
-      expected: PRIVATE,
-    },
-    {
-      name: "ｐｒｉｖａｔｅ: true (전각 키) → 비공개",
-      basis: "2절 fail-closed",
-      content: note("ｐｒｉｖａｔｅ: true\npublish: true"),
-      expected: PRIVATE,
-    },
-    {
-      name: "PRİVATE: true (터키어 İ 키) → 비공개",
-      basis: "2절 fail-closed",
-      content: note("PRİVATE: true\npublish: true"),
-      expected: PRIVATE,
-    },
-    {
-      name: '"private ": false (키 뒤 공백, false) → 비공개',
-      basis: "2절 fail-closed",
-      content: note('"private ": false\npublish: true'),
-      expected: PRIVATE,
-    },
-    {
-      name: "Private: false (키 대소문자 다름) → 비공개",
-      basis: "2절 fail-closed",
-      content: note("publish: true\nPrivate: false"),
-      expected: PRIVATE,
-    },
-    {
-      name: "private: False (대문자 값) → 비공개",
-      basis: "2절 fail-closed",
-      content: note("publish: true\nprivate: False"),
-      expected: PRIVATE,
-    },
-    {
-      name: "private: (값 없음) → 비공개",
-      basis: "2절 fail-closed",
-      content: note("publish: true\nprivate:"),
+      content: note("private: true"),
       expected: PRIVATE,
     },
   ]);
 });
 
-describe("공개 값이 애매하면 알림 없이 비공개", () => {
+// 정확히 `publish: true`인 줄이 아니면 공개 설정이 없는 것으로 보고 알림 없이 비공개 (2026-10-29 사용자 결정, 인수인계 가정 14)
+describe("publish 표기가 정확하지 않으면 알림 없이 비공개", () => {
   table([
-    {
-      name: 'publish: "true" 문자열 → 비공개',
+    ...[
+      ['publish: "true"', '따옴표 값 "true"'],
+      ["publish: yes", "yes"],
+      ["Publish: true", "키 대소문자 다름"],
+      ["publish: True", "값 대소문자 다름"],
+      ["publish: TRUE", "값 대문자"],
+      ["publish: !!str true", "태그 붙은 값"],
+      ["publish: 1", "숫자"],
+      ["publish: [true]", "목록"],
+      ['"publish": true', "따옴표 키"],
+      ['"publish ": true', "키 뒤 공백"],
+      ["publish:  true", "값 앞 공백 두 칸"],
+      ["publish: true ", "줄 끝 공백"],
+      ["publish: true # 공개", "줄 끝 주석"],
+      ["ｐｕｂｌｉｓｈ: true", "전각 키"],
+      ["!foo publish: true", "태그 붙은 키"],
+      ["<<: {publish: true}", "병합 키로만 들어옴"],
+      ["base: &b {publish: true}\n<<: *b", "앵커를 병합"],
+      ["x: &k publish\n*k : true", "별칭 키"],
+      ["t: &t true\npublish: *t", "별칭 값"],
+    ].map(([frontmatter, label]): Row => ({
+      name: `${label} → 비공개`,
       basis: "2절, 4-2 4절",
-      content: note('publish: "true"'),
+      content: note(frontmatter),
+      expected: PRIVATE,
+    })),
+    {
+      name: "본문에만 publish: true가 있음 → 비공개",
+      basis: "2절",
+      content: note("title: 제목", "publish: true\n"),
       expected: PRIVATE,
     },
+  ]);
+});
+
+// 정확히 `private: true`인 줄이 아니면 private 설정이 없는 것으로 봄. 철자 오타와 같이 범위 밖 (2026-10-29 사용자 결정, 인수인계 가정 14)
+describe("private 표기가 정확하지 않으면 private 설정으로 보지 않음", () => {
+  table([
+    ...[
+      ['private: "true"', '따옴표 값 "true"'],
+      ["private: yes", "yes"],
+      ["Private: true", "키 대소문자 다름"],
+      ["private: True", "값 대소문자 다름"],
+      ['"private": true', "따옴표 키"],
+      ['"private ": true', "키 뒤 공백"],
+      ["private: true # 비공개", "줄 끝 주석"],
+      ["ｐｒｉｖａｔｅ: true", "전각 키"],
+      ["<<: {private: true}", "병합 키로만 들어옴"],
+      ["x: &k private\n*k : true", "별칭 키"],
+      ["xprivate: true", "앞에 글자가 붙은 키"],
+    ].map(([frontmatter, label]): Row => ({
+      name: `${label}, publish: true, 승인 있음 → 공개`,
+      basis: "2절",
+      content: note(`${frontmatter}\npublish: true`),
+      expected: PUBLIC,
+    })),
     {
-      name: "publish: yes → 비공개",
-      basis: "2절, 4-2 4절",
-      content: note("publish: yes"),
-      expected: PRIVATE,
+      name: "본문에만 private: true, frontmatter에 publish: true → 공개",
+      basis: "2절",
+      content: note("publish: true", "private: true\n"),
+      expected: PUBLIC,
     },
-    {
-      name: "Publish: true (키 대소문자 다름) → 비공개",
-      basis: "2절, 4-2 4절",
-      content: note("Publish: true"),
-      expected: PRIVATE,
-    },
-    {
-      name: "publish: True (대문자 값) → 비공개",
-      basis: "2절, 4-2 4절",
-      content: note("publish: True"),
-      expected: PRIVATE,
-    },
-    {
-      name: "publish: TRUE (대문자 값) → 비공개",
-      basis: "2절, 4-2 4절",
-      content: note("publish: TRUE"),
-      expected: PRIVATE,
-    },
-    {
-      name: "publish: !!str true → 비공개",
-      basis: "2절, 4-2 4절",
-      content: note("publish: !!str true"),
-      expected: PRIVATE,
-    },
-    {
-      name: "publish: 1 → 비공개",
-      basis: "2절, 4-2 4절",
-      content: note("publish: 1"),
-      expected: PRIVATE,
-    },
-    {
-      name: "publish: [true] → 비공개",
-      basis: "2절, 4-2 4절",
-      content: note("publish: [true]"),
-      expected: PRIVATE,
-    },
-    {
-      name: "publish: true와 Publish: false가 함께 있음 → 비공개",
-      basis: "2절, 4-2 4절",
-      content: note("publish: true\nPublish: false"),
-      expected: PRIVATE,
-    },
-    {
-      name: '"publish ": true (키 뒤 공백) → 비공개',
-      basis: "2절, 4-2 4절",
-      content: note('"publish ": true'),
-      expected: PRIVATE,
-    },
-    {
-      name: "ｐｕｂｌｉｓｈ: true (전각 키) → 비공개",
-      basis: "2절, 4-2 4절",
-      content: note("ｐｕｂｌｉｓｈ: true"),
-      expected: PRIVATE,
-    },
-    {
-      name: 'publish: true와 "publish ": false가 함께 있음 → 비공개',
-      basis: "2절, 4-2 4절",
-      content: note('publish: true\n"publish ": false'),
-      expected: PRIVATE,
-    },
+  ]);
+});
+
+describe("노트가 frontmatter로 시작하지 않으면 비공개", () => {
+  table([
     {
       name: "frontmatter 없음 → 비공개",
       basis: "2절",
       content: "publish: true\n본문\n",
+      expected: PRIVATE,
+    },
+    {
+      name: "첫 줄이 아닌 곳의 frontmatter 모양 → 비공개",
+      basis: "2절",
+      content: "\n---\npublish: true\n---\n본문\n",
+      expected: PRIVATE,
+    },
+    {
+      name: "BOM으로 시작 → 비공개",
+      basis: "2절",
+      content: "\uFEFF---\npublish: true\n---\n본문\n",
+      expected: PRIVATE,
+    },
+    {
+      name: "여는 줄 뒤 공백 '--- ' → 비공개",
+      basis: "2절",
+      content: "--- \npublish: true\n---\n본문\n",
       expected: PRIVATE,
     },
     {
@@ -308,18 +250,6 @@ describe("공개 값이 애매하면 알림 없이 비공개", () => {
       name: "frontmatter가 단일 값 → 비공개",
       basis: "2절",
       content: note("true"),
-      expected: PRIVATE,
-    },
-    {
-      name: "첫 줄이 아닌 곳의 frontmatter 모양 → 비공개",
-      basis: "2절",
-      content: "\n---\npublish: true\n---\n본문\n",
-      expected: PRIVATE,
-    },
-    {
-      name: "BOM으로 시작 → 비공개",
-      basis: "2절",
-      content: "﻿---\npublish: true\n---\n본문\n",
       expected: PRIVATE,
     },
   ]);
@@ -375,6 +305,25 @@ describe("frontmatter를 YAML로 읽을 수 없으면 보류", () => {
       content: "---\nprivate: true\ntitle: [닫히지 않음\n---\n본문\n",
       expected: held(BROKEN, 3),
     },
+    // 열 0의 publish: true 줄이 키가 아닌 자리에 오면 YAML 오류가 나므로, 읽히는 frontmatter에서 그 줄은 늘 최상위 키임
+    {
+      name: "따옴표 문자열 안의 publish: true 줄 → 보류",
+      basis: "4-2 4절",
+      content: note('title: "a\npublish: true\nb"'),
+      expected: held(BROKEN, 2),
+    },
+    {
+      name: "여러 줄 [ ] 안의 publish: true 줄 → 보류",
+      basis: "4-2 4절",
+      content: note("tags: [a,\npublish: true\n]"),
+      expected: held(BROKEN, 3),
+    },
+    {
+      name: "목록 뒤의 publish: true 줄 → 보류",
+      basis: "4-2 4절",
+      content: note("- a\npublish: true"),
+      expected: held(BROKEN, 3),
+    },
   ]);
 
   it("보류 사유에 노트 원문을 넣지 않음 (4-2 2절)", () => {
@@ -385,158 +334,6 @@ describe("frontmatter를 YAML로 읽을 수 없으면 보류", () => {
     );
     expect(JSON.stringify(decision)).not.toContain("CANARY-201");
   });
-});
-
-// 병합 키는 YAML 1.1과 1.2에서 뜻이 달라 별개 사유로 보류함 (2026-10-29 사용자 결정, 인수인계 가정 11)
-describe("최상위 병합 키(<<)가 있으면 보류", () => {
-  table([
-    {
-      name: "병합으로 private: true, 맨 키 publish: true → 보류(병합 키)",
-      basis: "2절, 4-2 4절",
-      content: note("<<: {private: true}\npublish: true"),
-      expected: held(MERGE, 2),
-    },
-    {
-      name: "맨 키 publish: true, 병합으로 publish: false → 보류(병합 키)",
-      basis: "2절, 4-2 4절",
-      content: note("publish: true\n<<: {publish: false}"),
-      expected: held(MERGE, 3),
-    },
-    {
-      name: "병합으로만 publish: true → 보류(병합 키)",
-      basis: "2절, 4-2 4절",
-      content: note("<<: {publish: true}"),
-      expected: held(MERGE, 2),
-    },
-    {
-      name: "병합 키, 승인 없음 → 보류(병합 키)",
-      basis: "2절, 4-2 4절",
-      content: note("publish: true\n<<: {a: 1}"),
-      approvals: [],
-      expected: held(MERGE, 3),
-    },
-    {
-      name: "앵커를 병합 → 보류(병합 키)",
-      basis: "2절, 4-2 4절",
-      content: note("base: &b {publish: true}\n<<: *b"),
-      expected: held(MERGE, 3),
-    },
-    {
-      name: "private: true가 있어도 병합 키가 있으면 → 보류(병합 키)",
-      basis: "2절, 4-2 4절",
-      content: note("private: true\n<<: {a: 1}"),
-      expected: held(MERGE, 3),
-    },
-    {
-      name: "병합 키가 있어도 YAML을 읽을 수 없으면 → 보류(읽을 수 없음)",
-      basis: "4-2 4절",
-      content: note("<<: {a: 1}\ntitle: [닫히지 않음"),
-      expected: held(BROKEN, 3),
-    },
-    {
-      name: "최상위가 아닌 곳의 병합 키 → 공개",
-      basis: "2절, 4-1 (0)",
-      content: note("publish: true\nmeta: {<<: {a: 1}}"),
-      expected: PUBLIC,
-    },
-  ]);
-});
-
-// 별칭 키와 복합 키는 publish, private를 가릴 수 있어 별개 사유로 보류함 (2026-10-29 사용자 결정, 인수인계 가정 12)
-describe("최상위 키가 이름이 아니면(별칭 키, 복합 키) 보류", () => {
-  table([
-    {
-      name: "별칭 키로 private: true, 맨 키 publish: true → 보류(키)",
-      basis: "2절, 4-2 4절",
-      content: note("x: &k private\n*k : true\npublish: true"),
-      expected: held(KEY, 3),
-    },
-    {
-      name: "맨 키 publish: true, 별칭 키로 publish: false → 보류(키)",
-      basis: "2절, 4-2 4절",
-      content: note("x: &k publish\npublish: true\n*k : false"),
-      expected: held(KEY, 4),
-    },
-    {
-      name: "별칭 키로만 publish: true → 보류(키)",
-      basis: "2절, 4-2 4절",
-      content: note("x: &k publish\n*k : true"),
-      expected: held(KEY, 3),
-    },
-    {
-      name: "복합 키(목록) → 보류(키)",
-      basis: "2절, 4-2 4절",
-      content: note("? [private]\n: true\npublish: true"),
-      expected: held(KEY, 2),
-    },
-    {
-      name: "복합 키(묶음) → 보류(키)",
-      basis: "2절, 4-2 4절",
-      content: note("publish: true\n? {private: x}\n: true"),
-      expected: held(KEY, 3),
-    },
-    {
-      name: "태그 붙은 키 !foo publish → 보류(키)",
-      basis: "2절, 4-2 4절",
-      content: note("!foo publish: true"),
-      expected: held(KEY, 2),
-    },
-    {
-      name: "태그 붙은 키 !!str private → 보류(키)",
-      basis: "2절, 4-2 4절",
-      content: note("publish: true\n!!str private: true"),
-      expected: held(KEY, 3),
-    },
-    {
-      name: "태그 붙은 키 !!str << → 보류(키, 병합 키 아님)",
-      basis: "2절, 4-2 4절",
-      content: note("publish: true\n!!str <<: {a: 1}"),
-      expected: held(KEY, 3),
-    },
-    {
-      name: "별칭 키, 승인 없음 → 보류(키)",
-      basis: "2절, 4-2 4절",
-      content: note("x: &k a\n*k : 1\npublish: true"),
-      approvals: [],
-      expected: held(KEY, 3),
-    },
-    {
-      name: "private: true가 있어도 별칭 키가 있으면 → 보류(키)",
-      basis: "2절, 4-2 4절",
-      content: note("private: true\nx: &k a\n*k : 1"),
-      expected: held(KEY, 4),
-    },
-    {
-      name: "별칭 키가 있어도 YAML을 읽을 수 없으면 → 보류(읽을 수 없음)",
-      basis: "4-2 4절",
-      content: note("x: &k a\n*k : 1\ntitle: [닫히지 않음"),
-      expected: held(BROKEN, 4),
-    },
-    {
-      name: "별칭 키와 병합 키가 함께 있으면 먼저 나온 키의 사유 → 보류(병합 키)",
-      basis: "2절, 4-2 4절",
-      content: note("<<: {a: 1}\nx: &k a\n*k : 1"),
-      expected: held(MERGE, 2),
-    },
-    {
-      name: "병합 키보다 별칭 키가 먼저 나오면 → 보류(키)",
-      basis: "2절, 4-2 4절",
-      content: note("x: &k a\n*k : 1\n<<: {a: 1}"),
-      expected: held(KEY, 3),
-    },
-    {
-      name: "값이 별칭인 것은 키 문제가 아님: publish: *t → 비공개",
-      basis: "2절, 4-2 4절",
-      content: note("t: &t true\npublish: *t"),
-      expected: PRIVATE,
-    },
-    {
-      name: "빈 키(: 값)는 이름이 빈 키로 봄 → 공개",
-      basis: "2절, 4-1 (0)",
-      content: note(": x\npublish: true"),
-      expected: PUBLIC,
-    },
-  ]);
 });
 
 describe("볼트 루트 README도 같은 규칙", () => {
