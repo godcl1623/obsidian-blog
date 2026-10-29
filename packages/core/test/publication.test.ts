@@ -1,0 +1,319 @@
+import { describe, expect, it } from "vitest";
+import { decidePublication, type Decision } from "../src/publication.ts";
+
+// 가짜 노트만 씀. 실제 볼트는 열지 않음 (blog-plan.md 4-2 6절)
+const note = (frontmatter: string, body = "본문\n") =>
+  `---\n${frontmatter}\n---\n${body}`;
+
+const PATH = "공개 글/노트.md";
+const APPROVED = [PATH];
+
+const PUBLIC: Decision = { kind: "public" };
+const PRIVATE: Decision = { kind: "private" };
+const held = (reason: string, line?: number): Decision =>
+  line === undefined
+    ? { kind: "held", reason }
+    : { kind: "held", reason, line };
+const BROKEN = "frontmatter를 읽을 수 없음";
+const UNAPPROVED = "승인 없음";
+
+type Row = {
+  name: string;
+  basis: string;
+  path?: string;
+  content: string;
+  approvals?: readonly string[];
+  expected: Decision;
+};
+
+const table = (rows: Row[]) =>
+  it.each(rows)(
+    "$name ($basis)",
+    ({ path = PATH, content, approvals = APPROVED, expected }) => {
+      expect(decidePublication(path, content, approvals)).toEqual(expected);
+    },
+  );
+
+describe("공개 조건: publish: true와 승인 기록이 모두 있어야 공개", () => {
+  table([
+    {
+      name: "publish: true, 승인 있음 → 공개",
+      basis: "2절, 4-1 (0)",
+      content: note("publish: true"),
+      expected: PUBLIC,
+    },
+    {
+      name: "publish: true, 다른 필드와 함께 → 공개",
+      basis: "2절, 4-1 (0)",
+      content: note("title: 제목\npublish: true\ntags: [a]"),
+      expected: PUBLIC,
+    },
+    {
+      name: "CRLF 줄바꿈, publish: true, 승인 있음 → 공개",
+      basis: "2절, 4-1 (0)",
+      content: "---\r\npublish: true\r\n---\r\n본문\r\n",
+      expected: PUBLIC,
+    },
+    {
+      name: "publish: true, 승인 없음 → 보류(승인 없음)",
+      basis: "4-1 (0), 4-2 4절",
+      content: note("publish: true"),
+      approvals: [],
+      expected: held(UNAPPROVED),
+    },
+    {
+      name: "publish: true, 다른 경로만 승인됨 → 보류(승인 없음)",
+      basis: "4-1 (0), 4-2 4절",
+      content: note("publish: true"),
+      approvals: ["공개 글/다른 노트.md"],
+      expected: held(UNAPPROVED),
+    },
+    {
+      name: "publish: false, 승인 있음 → 비공개",
+      basis: "2절, 4-1 (0)",
+      content: note("publish: false"),
+      expected: PRIVATE,
+    },
+    {
+      name: "publish 없음, 승인 있음 → 비공개",
+      basis: "2절, 4-1 (0)",
+      content: note("title: 제목"),
+      expected: PRIVATE,
+    },
+    {
+      name: "publish 없음, 승인 없음 → 비공개",
+      basis: "2절, 4-1 (0)",
+      content: note("title: 제목"),
+      approvals: [],
+      expected: PRIVATE,
+    },
+  ]);
+});
+
+describe("private: true는 publish보다 우선", () => {
+  table([
+    {
+      name: "private: true, publish: true, 승인 있음 → 비공개",
+      basis: "2절",
+      content: note("publish: true\nprivate: true"),
+      expected: PRIVATE,
+    },
+    {
+      name: "private: true, publish: true, 승인 없음 → 비공개(보류 아님)",
+      basis: "2절",
+      content: note("private: true\npublish: true"),
+      approvals: [],
+      expected: PRIVATE,
+    },
+    {
+      name: "private: false, publish: true, 승인 있음 → 공개",
+      basis: "2절",
+      content: note("publish: true\nprivate: false"),
+      expected: PUBLIC,
+    },
+    {
+      name: 'private: "true" 문자열 → 비공개',
+      basis: "2절 fail-closed",
+      content: note('publish: true\nprivate: "true"'),
+      expected: PRIVATE,
+    },
+    {
+      name: "private: yes → 비공개",
+      basis: "2절 fail-closed",
+      content: note("publish: true\nprivate: yes"),
+      expected: PRIVATE,
+    },
+    {
+      name: "Private: true (키 대소문자 다름) → 비공개",
+      basis: "2절 fail-closed",
+      content: note("publish: true\nPrivate: true"),
+      expected: PRIVATE,
+    },
+    {
+      name: "Private: false (키 대소문자 다름) → 비공개",
+      basis: "2절 fail-closed",
+      content: note("publish: true\nPrivate: false"),
+      expected: PRIVATE,
+    },
+    {
+      name: "private: False (대문자 값) → 비공개",
+      basis: "2절 fail-closed",
+      content: note("publish: true\nprivate: False"),
+      expected: PRIVATE,
+    },
+    {
+      name: "private: (값 없음) → 비공개",
+      basis: "2절 fail-closed",
+      content: note("publish: true\nprivate:"),
+      expected: PRIVATE,
+    },
+  ]);
+});
+
+describe("공개 값이 애매하면 알림 없이 비공개", () => {
+  table([
+    {
+      name: 'publish: "true" 문자열 → 비공개',
+      basis: "2절, 4-2 4절",
+      content: note('publish: "true"'),
+      expected: PRIVATE,
+    },
+    {
+      name: "publish: yes → 비공개",
+      basis: "2절, 4-2 4절",
+      content: note("publish: yes"),
+      expected: PRIVATE,
+    },
+    {
+      name: "Publish: true (키 대소문자 다름) → 비공개",
+      basis: "2절, 4-2 4절",
+      content: note("Publish: true"),
+      expected: PRIVATE,
+    },
+    {
+      name: "publish: True (대문자 값) → 비공개",
+      basis: "2절, 4-2 4절",
+      content: note("publish: True"),
+      expected: PRIVATE,
+    },
+    {
+      name: "publish: TRUE (대문자 값) → 비공개",
+      basis: "2절, 4-2 4절",
+      content: note("publish: TRUE"),
+      expected: PRIVATE,
+    },
+    {
+      name: "publish: !!str true → 비공개",
+      basis: "2절, 4-2 4절",
+      content: note("publish: !!str true"),
+      expected: PRIVATE,
+    },
+    {
+      name: "publish: 1 → 비공개",
+      basis: "2절, 4-2 4절",
+      content: note("publish: 1"),
+      expected: PRIVATE,
+    },
+    {
+      name: "publish: [true] → 비공개",
+      basis: "2절, 4-2 4절",
+      content: note("publish: [true]"),
+      expected: PRIVATE,
+    },
+    {
+      name: "publish: true와 Publish: false가 함께 있음 → 비공개",
+      basis: "2절, 4-2 4절",
+      content: note("publish: true\nPublish: false"),
+      expected: PRIVATE,
+    },
+    {
+      name: "frontmatter 없음 → 비공개",
+      basis: "2절",
+      content: "publish: true\n본문\n",
+      expected: PRIVATE,
+    },
+    {
+      name: "빈 frontmatter → 비공개",
+      basis: "2절",
+      content: "---\n---\n본문\n",
+      expected: PRIVATE,
+    },
+    {
+      name: "frontmatter가 목록 → 비공개",
+      basis: "2절",
+      content: note("- publish: true"),
+      expected: PRIVATE,
+    },
+    {
+      name: "frontmatter가 단일 값 → 비공개",
+      basis: "2절",
+      content: note("true"),
+      expected: PRIVATE,
+    },
+    {
+      name: "첫 줄이 아닌 곳의 frontmatter 모양 → 비공개",
+      basis: "2절",
+      content: "\n---\npublish: true\n---\n본문\n",
+      expected: PRIVATE,
+    },
+  ]);
+});
+
+describe("frontmatter를 YAML로 읽을 수 없으면 보류", () => {
+  table([
+    {
+      name: "YAML 문법 오류 → 보류(줄 번호)",
+      basis: "4-2 4절",
+      content: "---\npublish: true\ntitle: [닫히지 않음\n---\n본문\n",
+      expected: held(BROKEN, 3),
+    },
+    {
+      name: "중복 키 → 보류(줄 번호)",
+      basis: "4-2 4절",
+      content: "---\npublish: true\npublish: false\n---\n본문\n",
+      expected: held(BROKEN, 3),
+    },
+    {
+      name: "닫는 --- 없음 → 보류(1줄)",
+      basis: "4-2 4절",
+      content: "---\npublish: true\n본문\n",
+      expected: held(BROKEN, 1),
+    },
+    {
+      name: "읽을 수 없으면 private: true여도 보류",
+      basis: "4-2 4절",
+      content: "---\nprivate: true\ntitle: [닫히지 않음\n---\n본문\n",
+      expected: held(BROKEN, 3),
+    },
+  ]);
+
+  it("보류 사유에 노트 원문을 넣지 않음 (4-2 2절)", () => {
+    const decision = decidePublication(
+      PATH,
+      "---\npublish: true\ntitle: [CANARY-201\n---\n",
+      APPROVED,
+    );
+    expect(JSON.stringify(decision)).not.toContain("CANARY-201");
+  });
+});
+
+describe("볼트 루트 README도 같은 규칙", () => {
+  table([
+    {
+      name: "README, publish: true, 승인 있음 → 공개",
+      basis: "2절, 4-2 3절",
+      path: "README.md",
+      content: note("publish: true"),
+      approvals: ["README.md"],
+      expected: PUBLIC,
+    },
+    {
+      name: "README, publish 없음 → 비공개",
+      basis: "2절, 4-2 3절",
+      path: "README.md",
+      content: "# 소개\n",
+      approvals: ["README.md"],
+      expected: PRIVATE,
+    },
+    {
+      name: "README, publish: true, 승인 없음 → 보류(승인 없음)",
+      basis: "2절, 4-2 3절",
+      path: "README.md",
+      content: note("publish: true"),
+      approvals: [],
+      expected: held(UNAPPROVED),
+    },
+  ]);
+});
+
+describe("폴더 기준 공개는 없음", () => {
+  table([
+    {
+      name: "폴더 경로만 승인됨 → 보류(승인 없음)",
+      basis: "2절",
+      content: note("publish: true"),
+      approvals: ["공개 글", "공개 글/"],
+      expected: held(UNAPPROVED),
+    },
+  ]);
+});
