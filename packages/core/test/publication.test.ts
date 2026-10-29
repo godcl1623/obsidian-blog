@@ -55,6 +55,18 @@ describe("공개 조건: publish: true와 승인 기록이 모두 있어야 공�
       expected: PUBLIC,
     },
     {
+      name: '따옴표 키 "publish": true, 승인 있음 → 공개',
+      basis: "2절, 4-1 (0)",
+      content: note('"publish": true'),
+      expected: PUBLIC,
+    },
+    {
+      name: "다른 필드에 YAML 경고(모르는 태그)가 있어도 → 공개",
+      basis: "2절, 4-1 (0)",
+      content: note("publish: true\ntitle: !foo 제목"),
+      expected: PUBLIC,
+    },
+    {
       name: "publish: true, 승인 없음 → 보류(승인 없음)",
       basis: "4-1 (0), 4-2 4절",
       content: note("publish: true"),
@@ -127,6 +139,12 @@ describe("private: true는 publish보다 우선", () => {
       name: "Private: true (키 대소문자 다름) → 비공개",
       basis: "2절 fail-closed",
       content: note("publish: true\nPrivate: true"),
+      expected: PRIVATE,
+    },
+    {
+      name: "따옴표 키 'private': true → 비공개",
+      basis: "2절",
+      content: note("'private': true\npublish: true"),
       expected: PRIVATE,
     },
     {
@@ -236,6 +254,12 @@ describe("공개 값이 애매하면 알림 없이 비공개", () => {
       content: "\n---\npublish: true\n---\n본문\n",
       expected: PRIVATE,
     },
+    {
+      name: "BOM으로 시작 → 비공개",
+      basis: "2절",
+      content: "﻿---\npublish: true\n---\n본문\n",
+      expected: PRIVATE,
+    },
   ]);
 });
 
@@ -257,6 +281,18 @@ describe("frontmatter를 YAML로 읽을 수 없으면 보류", () => {
       name: "닫는 --- 없음 → 보류(1줄)",
       basis: "4-2 4절",
       content: "---\npublish: true\n본문\n",
+      expected: held(BROKEN, 1),
+    },
+    {
+      name: "닫는 줄이 '--- '(뒤 공백) → 보류(1줄)",
+      basis: "4-2 4절",
+      content: "---\npublish: true\n--- \n본문\n",
+      expected: held(BROKEN, 1),
+    },
+    {
+      name: "닫는 줄이 ... → 보류(1줄)",
+      basis: "4-2 4절",
+      content: "---\npublish: true\n...\n본문\n",
       expected: held(BROKEN, 1),
     },
     {
