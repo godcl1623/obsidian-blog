@@ -27,6 +27,13 @@ export function decidePublication(
   if (end === -1) return { kind: "held", reason: BROKEN, line: 1 };
 
   const frontmatter = lines.slice(1, end).join("\n");
+  // YAML은 따옴표 안의 단독 CR, U+2028, U+2029를 줄바꿈으로 보지 않지만 정규식의 m 플래그는 줄 끝으로 보므로,
+  // 둘이 보는 줄이 어긋나지 않게 보류함 (CRLF의 CR은 위에서 이미 나눔)
+  const separator = frontmatter.search(/[\r\u2028\u2029]/);
+  if (separator !== -1) {
+    const line = frontmatter.slice(0, separator).split("\n").length + 1;
+    return { kind: "held", reason: BROKEN, line };
+  }
   const lineCounter = new LineCounter();
   const doc = parseDocument(frontmatter, { lineCounter });
   const [error] = doc.errors;

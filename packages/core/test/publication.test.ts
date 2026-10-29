@@ -364,6 +364,27 @@ describe("Obsidian 속성 형식이 아니면 보류", () => {
       ["publish: true\nitems:\n  - &x a", 4, "앵커 붙은 목록 항목"],
       ["publish: true\nitems: !foo [a]", 3, "태그 붙은 목록"],
       ["publish: true\nitems: &x [a]", 3, "앵커 붙은 목록"],
+      [
+        'title: "x\u2028publish: true\u2028"',
+        2,
+        "따옴표 안 U+2028로 감싼 publish 줄",
+      ],
+      [
+        'title: "x\u2029publish: true\u2029"',
+        2,
+        "따옴표 안 U+2029로 감싼 publish 줄",
+      ],
+      ['title: "x\rpublish: true\r"', 2, "따옴표 안 단독 CR로 감싼 publish 줄"],
+      ["title: x\u2028publish: true", 2, "따옴표 밖 U+2028"],
+      ['publish: true\ntitle: "x\u2028y"', 3, "둘째 줄의 U+2028"],
+      ['title: "x\u2028y"', 2, "publish가 없는 노트의 U+2028"],
+      [
+        'private: true\ntitle: "x\u2028y"',
+        3,
+        "private: true와 함께 있는 U+2028",
+      ],
+      ['meta:\n  a: 1\ntitle: "x\u2028y"', 4, "형식 위반보다 아래 줄의 U+2028"],
+      ['title: "x\u2028y"\nbad: [', 2, "YAML 오류보다 위 줄의 U+2028"],
       ["private: true\nmeta:\n  a: 1", 4, "private: true가 있어도 중첩 묶음"],
     ].map(([frontmatter, line, label]): Row => ({
       name: `${label} → 보류(줄 번호)`,
