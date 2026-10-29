@@ -40,13 +40,16 @@ export function decidePublication(
 
   const map = doc.contents;
   if (!isMap(map)) return { kind: "private" };
-  // 병합 키는 YAML 1.1과 1.2에서 뜻이 달라지고, 별칭 키와 복합 키는 publish, private를 가릴 수 있으므로 보류함
+  // 병합 키는 YAML 1.1과 1.2에서 뜻이 달라지고, 별칭 키, 복합 키, 태그 붙은 키는 publish, private를 가릴 수 있으므로 보류함
   // 해석한 문서의 키는 늘 노드이고 range가 있음
   const keys = map.items.map(({ key }) => key as Node);
-  const odd = keys.find((key) => !isScalar(key) || key.value === "<<");
+  const odd = keys.find(
+    (key) => !isScalar(key) || key.tag !== undefined || key.value === "<<",
+  );
   if (odd) {
     const line = lineCounter.linePos(odd.range![0]).line + 1;
-    return { kind: "held", reason: isScalar(odd) ? MERGE : KEY, line };
+    const merge = isScalar(odd) && odd.tag === undefined;
+    return { kind: "held", reason: merge ? MERGE : KEY, line };
   }
   const fields = map.items.map(
     ({ key, value }) => [String((key as Scalar).value), value] as const,
