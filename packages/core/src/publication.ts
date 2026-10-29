@@ -1,4 +1,4 @@
-import { isMap, isScalar, parseDocument } from "yaml";
+import { isMap, isScalar, LineCounter, parseDocument } from "yaml";
 
 export type Decision =
   | { kind: "public" }
@@ -7,6 +7,7 @@ export type Decision =
 
 // 보류 사유는 알림으로 나가므로 고정 문구와 줄 번호만 담음. 해석기 오류 문구에는 노트 원문이 섞일 수 있음 (blog-plan.md 4-2 2절)
 const BROKEN = "frontmatter를 읽을 수 없음";
+const MERGE = "병합 키(<<)는 쓰지 않음";
 
 // 공개는 frontmatter `publish: true`(boolean)와 승인 목록의 경로가 모두 있을 때만임. 애매하면 비공개 (blog-plan.md 2절, 4-1 (0), 4-2 4절)
 export function decidePublication(
@@ -19,7 +20,8 @@ export function decidePublication(
   const end = lines.indexOf("---", 1);
   if (end === -1) return { kind: "held", reason: BROKEN, line: 1 };
 
-  const doc = parseDocument(lines.slice(1, end).join("\n"));
+  const lineCounter = new LineCounter();
+  const doc = parseDocument(lines.slice(1, end).join("\n"), { lineCounter });
   const [error] = doc.errors;
   if (error) {
     const pos = error.linePos?.[0];
@@ -30,6 +32,15 @@ export function decidePublication(
 
   const map = doc.contents;
   if (!isMap(map)) return { kind: "private" };
+  // 병합 키는 YAML 1.1과 1.2에서 뜻이 달라 publish, private 값을 정할 수 없으므로 보류함
+  const merge = map.items
+    .map(({ key }) => key)
+    .find((key) => isScalar(key) && key.value === "<<");
+  if (merge) {
+    // 해석한 노드에는 늘 range가 있음
+    const line = lineCounter.linePos(merge.range![0]).line + 1;
+    return { kind: "held", reason: MERGE, line };
+  }
   const fields = map.items.flatMap(({ key, value }) =>
     isScalar(key) ? [[String(key.value), value] as const] : [],
   );

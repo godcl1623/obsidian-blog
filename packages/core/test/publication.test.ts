@@ -16,6 +16,7 @@ const held = (reason: string, line?: number): Decision =>
     : { kind: "held", reason, line };
 const BROKEN = "frontmatter를 읽을 수 없음";
 const UNAPPROVED = "승인 없음";
+const MERGE = "병합 키(<<)는 쓰지 않음";
 
 type Row = {
   name: string;
@@ -311,6 +312,61 @@ describe("frontmatter를 YAML로 읽을 수 없으면 보류", () => {
     );
     expect(JSON.stringify(decision)).not.toContain("CANARY-201");
   });
+});
+
+// 병합 키는 YAML 1.1과 1.2에서 뜻이 달라 별개 사유로 보류함 (2026-10-29 사용자 결정, 인수인계 가정 11)
+describe("최상위 병합 키(<<)가 있으면 보류", () => {
+  table([
+    {
+      name: "병합으로 private: true, 맨 키 publish: true → 보류(병합 키)",
+      basis: "2절, 4-2 4절",
+      content: note("<<: {private: true}\npublish: true"),
+      expected: held(MERGE, 2),
+    },
+    {
+      name: "맨 키 publish: true, 병합으로 publish: false → 보류(병합 키)",
+      basis: "2절, 4-2 4절",
+      content: note("publish: true\n<<: {publish: false}"),
+      expected: held(MERGE, 3),
+    },
+    {
+      name: "병합으로만 publish: true → 보류(병합 키)",
+      basis: "2절, 4-2 4절",
+      content: note("<<: {publish: true}"),
+      expected: held(MERGE, 2),
+    },
+    {
+      name: "병합 키, 승인 없음 → 보류(병합 키)",
+      basis: "2절, 4-2 4절",
+      content: note("publish: true\n<<: {a: 1}"),
+      approvals: [],
+      expected: held(MERGE, 3),
+    },
+    {
+      name: "앵커를 병합 → 보류(병합 키)",
+      basis: "2절, 4-2 4절",
+      content: note("base: &b {publish: true}\n<<: *b"),
+      expected: held(MERGE, 3),
+    },
+    {
+      name: "private: true가 있어도 병합 키가 있으면 → 보류(병합 키)",
+      basis: "2절, 4-2 4절",
+      content: note("private: true\n<<: {a: 1}"),
+      expected: held(MERGE, 3),
+    },
+    {
+      name: "병합 키가 있어도 YAML을 읽을 수 없으면 → 보류(읽을 수 없음)",
+      basis: "4-2 4절",
+      content: note("<<: {a: 1}\ntitle: [닫히지 않음"),
+      expected: held(BROKEN, 3),
+    },
+    {
+      name: "최상위가 아닌 곳의 병합 키 → 공개",
+      basis: "2절, 4-1 (0)",
+      content: note("publish: true\nmeta: {<<: {a: 1}}"),
+      expected: PUBLIC,
+    },
+  ]);
 });
 
 describe("볼트 루트 README도 같은 규칙", () => {
