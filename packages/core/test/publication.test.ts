@@ -437,6 +437,25 @@ describe("볼트 루트 README도 같은 규칙", () => {
   ]);
 });
 
+// 승인 경로는 git이 저장한 경로 문자열과 글자 그대로 비교함. 적은 방식만 달라도 다른 경로로 보고 보류함 (2026-10-30 사용자 결정, 인수인계 가정 3·17)
+describe("승인 경로를 적은 방식이 다르면 다른 경로", () => {
+  table(
+    [
+      ["공개 글/노트.MD", "대소문자만 다름"],
+      ["공개 글/노트.md".normalize("NFD"), "NFD로 적음"],
+      ["./공개 글/노트.md", "앞에 ./ 붙음"],
+      ["공개 글/노트.md ", "끝에 공백 붙음"],
+      ["공개 글\\노트.md", "구분자가 백슬래시"],
+    ].map(([approved, label]): Row => ({
+      name: `승인 경로가 ${label} → 보류(승인 없음)`,
+      basis: "4-1 (0)",
+      content: note("publish: true"),
+      approvals: [approved],
+      expected: held(UNAPPROVED),
+    })),
+  );
+});
+
 describe("폴더 기준 공개는 없음", () => {
   table([
     {
