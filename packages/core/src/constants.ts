@@ -6,3 +6,5 @@ export const UNAPPROVED = "승인 없음";
 
 export const PUBLIC: Decision = { kind: "public" };
 export const PRIVATE: Decision = { kind: "private" };
+
+export const NOTE_EXTENSION = /\.md$/;
