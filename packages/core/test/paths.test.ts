@@ -139,6 +139,43 @@ describe("파일 이름이 점으로만 남는 노트", () => {
       paths: ["개발/.md", "개발.md"],
       expected: { "개발/.md": UNENCODABLE },
     },
+    {
+      name: "확장자가 대문자인 .MD → 보류",
+      basis: "4-3 A1, BLOG-30 가정 7, 8",
+      paths: ["개발/.MD"],
+      expected: { "개발/.MD": UNENCODABLE },
+    },
+    {
+      name: "확장자 대소문자가 섞인 ..mD → 보류",
+      basis: "4-3 A1, BLOG-30 가정 7, 8",
+      paths: ["..mD"],
+      expected: { "..mD": UNENCODABLE },
+    },
+  ]);
+});
+
+// 가정 8은 blog-plan.md에 없는 BLOG-30의 사용자 결정(2026-10-31): 노트 확장자 .md는 대소문자를 구분하지 않음.
+// 확장자 앞 이름의 대소문자는 그대로 구분함
+describe("노트 확장자의 대소문자", () => {
+  table(checkNotePaths, [
+    {
+      name: "확장자 대소문자만 다른 같은 노트 → 둘 다 보류",
+      basis: "4-1 (0), 4-3 A1, BLOG-30 가정 8",
+      paths: ["개발/노트.md", "개발/노트.MD"],
+      expected: { "개발/노트.md": CONFLICT, "개발/노트.MD": CONFLICT },
+    },
+    {
+      name: "확장자가 대문자인 노트와 폴더가 겹침 → 둘 다 보류",
+      basis: "4-1 (0), 4-3 A1, BLOG-30 가정 8",
+      paths: ["개발.MD", "개발/a.md"],
+      expected: { "개발.MD": CONFLICT, "개발/a.md": CONFLICT },
+    },
+    {
+      name: "이름과 확장자 대소문자가 모두 다름 → 충돌 아님",
+      basis: "3절, BLOG-30 가정 4, 8",
+      paths: ["Note.MD", "note.md"],
+      expected: {},
+    },
   ]);
 });
 

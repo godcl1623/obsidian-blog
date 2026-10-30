@@ -11,4 +11,5 @@ export const NOT_NFC = "경로가 NFC가 아님";
 export const UNENCODABLE = "주소로 바꿀 수 없음";
 export const URL_CONFLICT = "URL 충돌";
 
-export const NOTE_EXTENSION = /\.md$/;
+// 확장자 .md는 대소문자를 구분하지 않음 (BLOG-30 가정 8)
+export const NOTE_EXTENSION = /\.md$/i;

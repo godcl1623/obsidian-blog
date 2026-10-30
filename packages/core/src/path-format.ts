@@ -8,6 +8,6 @@ export const checkNfc = (path: string): string | undefined =>
 export const checkEncodable = (path: string): string | undefined =>
   path.isWellFormed() ? undefined : UNENCODABLE;
 
-// .md를 빼고 남는 이름이 빈 문자열, `.`, `..`이면 주소가 폴더 주소가 되거나 브라우저가 다른 주소로 바꿈 (BLOG-30 가정 7)
+// .md를 빼고 남는 이름이 빈 문자열, `.`, `..`이면 주소가 폴더 주소가 되거나 브라우저가 다른 주소로 바꿈 (BLOG-30 가정 7, 8)
 export const checkNoteName = (path: string): string | undefined =>
-  /(^|\/)\.{0,2}\.md$/.test(path) ? UNENCODABLE : undefined;
+  /(^|\/)\.{0,2}\.md$/i.test(path) ? UNENCODABLE : undefined;

@@ -67,6 +67,18 @@ describe("노트 주소는 /notes/ 뒤에 볼트 경로에서 .md만 뺀 형태"
       expected: "/notes/...",
     },
     {
+      name: "확장자가 대문자인 .MD도 뺌",
+      basis: "3절, BLOG-30 가정 8",
+      path: "노트.MD",
+      expected: "/notes/%EB%85%B8%ED%8A%B8",
+    },
+    {
+      name: "확장자 대소문자가 섞인 .Md도 빼고 이름의 대소문자는 그대로",
+      basis: "3절, 4-3 A1, BLOG-30 가정 8",
+      path: "Dev/ReadMe.Md",
+      expected: "/notes/Dev/ReadMe",
+    },
+    {
       name: "폴더 이름의 .md는 빼지 않음",
       basis: "3절",
       path: "a.md/b.md",
