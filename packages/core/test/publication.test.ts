@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { decidePublication, type Decision } from "../src/publication.ts";
+import { decidePublication } from "../src/publication.ts";
+import type { Decision } from "../src/types.ts";
 
 // 가짜 노트만 씀. 실제 볼트는 열지 않음 (blog-plan.md 4-2 6절)
 const note = (frontmatter: string, body = "본문\n") =>
