@@ -18,3 +18,7 @@
 
 - 함수 하나가 여러 관심사를 판단하면 관심사마다 함수로 나누고, 나눈 함수를 차례로 부르는 함수로 합침
 - 나눈 함수는 관심사별 파일에 둠. 합치는 함수는 부르는 순서만 담고 판단은 하지 않음
+
+## 4. 가져오기
+
+- 상대 경로 가져오기는 확장자를 적지 않음 (`from "./constants"`). TS 코드는 번들러(extractor·core 단일 파일 번들, web의 Astro)와 vitest로만 실행되므로 tsconfig `moduleResolution`을 `Bundler`로 둠 (blog-plan.md 4-2 5절)
