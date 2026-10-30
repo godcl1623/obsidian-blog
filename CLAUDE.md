@@ -11,6 +11,7 @@ Obsidian 볼트의 공개 노트만 골라 기술 블로그로 내보내는 프�
 - 진행 기록: `.claude/docs/private/progress/` (세션 하나당 파일 하나, `YYYY-MM-DD-HHMM-{티켓키 또는 주제}.md`. 시간순 색인이며 세부는 인수인계 파일에 씀)
 - `.claude/docs/private/`는 gitignore됨. 서버 경로, 포트, 접근 제어, 계정, 비밀값 위치, 실수 기록은 이 폴더 밖에 쓰지 않음 (공개 저장소)
 - 티켓 양식: `.claude/docs/ticket-template.md`
+- TypeScript 코드 규칙: `.claude/docs/conventions.md` (모든 TS 파일에 적용)
 
 ## 작업 규칙
 
