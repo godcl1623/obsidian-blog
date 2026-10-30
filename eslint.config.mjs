@@ -11,6 +11,21 @@ export default defineConfig(
   js.configs.recommended,
   tseslint.configs.recommended,
   {
+    // 보이지 않는 문자가 문자열, 정규식, 주석에 실제 문자로 들어가는 것을 막음. 필요하면 \uXXXX 이스케이프로 씀
+    rules: {
+      "no-irregular-whitespace": [
+        "error",
+        {
+          skipStrings: false,
+          skipTemplates: false,
+          skipRegExps: false,
+          skipComments: false,
+          skipJSXText: false,
+        },
+      ],
+    },
+  },
+  {
     files: ["**/*.{js,mjs}"],
     languageOptions: { globals: globals.node },
   },
