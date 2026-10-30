@@ -27,7 +27,7 @@ const reads = [
 ];
 const globs = ["glob", "globSync"];
 
-function check(path: unknown): void {
+const check = (path: unknown): void => {
   // 가드를 거친 open이 준 파일 디스크립터와 FileHandle
   if (
     typeof path === "number" ||
@@ -46,9 +46,9 @@ function check(path: unknown): void {
   if (!(real + sep).startsWith(fixtures)) {
     throw new Error(`fixtures 밖의 파일을 읽으려 함: ${real}`);
   }
-}
+};
 
-function guard<T>(mod: T): T {
+const guard = <T>(mod: T): T => {
   const wrapped: Record<string, unknown> = {
     ...(mod as Record<string, unknown>),
   };
@@ -79,7 +79,7 @@ function guard<T>(mod: T): T {
     }
   }
   return wrapped as T;
-}
+};
 
 vi.mock("node:fs", async (importOriginal) => guard(await importOriginal()));
 vi.mock("fs", async (importOriginal) => guard(await importOriginal()));

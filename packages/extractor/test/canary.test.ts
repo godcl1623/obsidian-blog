@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { assertNoCanaryInDir, assertNoCanaryInHtml } from "./canary.ts";
+import { assertNoCanaryInDir, assertNoCanaryInHtml } from "./canary";
 
 const fixture = (path: string) =>
   fileURLToPath(new URL(`fixtures/${path}`, import.meta.url));

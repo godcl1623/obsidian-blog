@@ -6,18 +6,17 @@ const CANARY = /CANARY-\d+/gi;
 
 type Hit = { canary: string; where: string };
 
-function find(text: string, where: string): Hit[] {
-  return [...new Set(text.match(CANARY))].map((canary) => ({ canary, where }));
-}
+const find = (text: string, where: string): Hit[] =>
+  [...new Set(text.match(CANARY))].map((canary) => ({ canary, where }));
 
-function fail(hits: Hit[]): void {
+const fail = (hits: Hit[]): void => {
   if (hits.length === 0) return;
   const lines = hits.map(({ canary, where }) => `  ${canary} ${where}`);
   throw new Error(`CANARY 표식이 출력에 남음:\n${lines.join("\n")}`);
-}
+};
 
 // 출력 형식에 기대지 않도록 폴더 아래 모든 파일을 검사함. 심볼릭 링크도 따라가고, 바이너리도 깨지지 않게 latin1로 읽음
-export function assertNoCanaryInDir(dir: string): void {
+export const assertNoCanaryInDir = (dir: string): void => {
   const files = readdirSync(dir, {
     recursive: true,
     withFileTypes: true,
@@ -30,8 +29,8 @@ export function assertNoCanaryInDir(dir: string): void {
       return find(readFileSync(path, "latin1"), relative(dir, path));
     }),
   );
-}
+};
 
-export function assertNoCanaryInHtml(html: string): void {
+export const assertNoCanaryInHtml = (html: string): void => {
   fail(find(html, "HTML"));
-}
+};
