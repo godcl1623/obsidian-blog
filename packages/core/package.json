@@ -1,5 +1,8 @@
 {
   "name": "@obsidian-blog/core",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "yaml": "2.9.1"
+  }
 }
