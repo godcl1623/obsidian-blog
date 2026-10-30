@@ -1,12 +1,12 @@
-import { PUBLIC, UNAPPROVED } from "./constants.js";
+import { PUBLIC, UNAPPROVED } from "./constants";
 import {
   checkLineSeparators,
   checkPropertyFormat,
   extractFrontmatter,
   parseFrontmatter,
-} from "./frontmatter.js";
-import { checkSettings } from "./settings.js";
-import type { Decision } from "./types.js";
+} from "./frontmatter";
+import { checkSettings } from "./settings";
+import type { Decision } from "./types";
 
 // 승인 경로는 git이 저장한 경로 문자열과 글자 그대로 비교함 (blog-plan.md 4-1 (0))
 const checkApproval = (path: string, approvals: readonly string[]): Decision =>

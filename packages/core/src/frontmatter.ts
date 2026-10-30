@@ -6,8 +6,8 @@ import {
   parseDocument,
   type Node,
 } from "yaml";
-import { BROKEN, PRIVATE } from "./constants.js";
-import type { Decision, ParsedFrontmatter, Step } from "./types.js";
+import { BROKEN, PRIVATE } from "./constants";
+import type { Decision, ParsedFrontmatter, Step } from "./types";
 
 const held = (line?: number): Decision =>
   line === undefined
