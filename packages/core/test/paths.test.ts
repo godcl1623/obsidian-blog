@@ -79,6 +79,42 @@ describe("노트 경로 형식", () => {
       expected: {},
     },
     {
+      name: "결합 악센트가 분리된 라틴 문자 → 보류",
+      basis: "3절, 4-1 (0)",
+      paths: ["e\u0301.md"],
+      expected: { "e\u0301.md": NOT_NFC },
+    },
+    {
+      name: "NFC가 다른 글자로 바꾸는 옹스트롬 기호 → 보류",
+      basis: "3절, 4-1 (0)",
+      paths: ["\u212B.md"],
+      expected: { "\u212B.md": NOT_NFC },
+    },
+    {
+      name: "NFC가 통합 한자로 바꾸는 CJK 호환 한자 → 보류",
+      basis: "3절, 4-1 (0), 4-3 A1",
+      paths: ["\uF900.md"],
+      expected: { "\uF900.md": NOT_NFC },
+    },
+    {
+      name: "NFKC만 바꾸는 합자 → 보류 없음",
+      basis: "3절, 4-1 (0)",
+      paths: ["\uFB01.md"],
+      expected: {},
+    },
+    {
+      name: "NFKC만 바꾸는 전각 문자 → 보류 없음",
+      basis: "3절, 4-1 (0)",
+      paths: ["\uFF21.md"],
+      expected: {},
+    },
+    {
+      name: "NFKC만 바꾸는 한글 호환 자모 → 보류 없음",
+      basis: "3절, 4-1 (0)",
+      paths: ["\u3131.md"],
+      expected: {},
+    },
+    {
       name: "빈 목록 → 보류 없음",
       basis: "4-1 (0)",
       paths: [],
@@ -204,6 +240,18 @@ describe("노트끼리 URL 충돌", () => {
         [nfd("개발/노트.md")]: NOT_NFC,
         "개발/노트.md": CONFLICT,
       },
+    },
+    {
+      name: "NFC로 바꾸면 같은 라틴 문자 노트 → 둘 다 보류",
+      basis: "4-1 (0), 4-2 4절",
+      paths: ["\u00E9.md", "e\u0301.md"],
+      expected: { "\u00E9.md": CONFLICT, "e\u0301.md": NOT_NFC },
+    },
+    {
+      name: "NFKC로만 같아지는 합자와 일반 글자 → 충돌 아님",
+      basis: "3절, 4-1 (0)",
+      paths: ["\uFB01.md", "fi.md"],
+      expected: {},
     },
     {
       name: "같은 경로가 두 번 들어옴 → 보류",
