@@ -140,6 +140,12 @@ describe("파일 이름이 점으로만 남는 노트", () => {
       expected: { "개발/.md": UNENCODABLE },
     },
     {
+      name: "퍼센트 인코딩된 점 이름 → 보류 없음",
+      basis: "3절, BLOG-30 가정 7, 10",
+      paths: ["%2e.md", "개발/.%2e.md"],
+      expected: {},
+    },
+    {
       name: "확장자가 대문자인 .MD → 보류",
       basis: "4-3 A1, BLOG-30 가정 7, 8",
       paths: ["개발/.MD"],
@@ -261,6 +267,12 @@ describe("노트끼리 URL 충돌", () => {
       name: "대소문자만 다른 노트와 폴더 → 충돌 아님",
       basis: "3절, 4-3 A1, BLOG-30 가정 4",
       paths: ["Dev.md", "dev/a.md"],
+      expected: {},
+    },
+    {
+      name: "공백과 이미 인코딩된 모양의 공백 → 충돌 아님",
+      basis: "3절, 4-1 (0), BLOG-30 가정 4, 10",
+      paths: ["a b.md", "a%20b.md"],
       expected: {},
     },
     {

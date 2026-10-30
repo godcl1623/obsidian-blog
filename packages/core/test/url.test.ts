@@ -14,7 +14,7 @@ describe("노트 주소는 /notes/ 뒤에 볼트 경로에서 .md만 뺀 형태"
   table(noteUrl, [
     {
       name: "볼트 루트 노트",
-      basis: "3절, 4-3 A1",
+      basis: "3절, 4-3 A1, BLOG-30 가정 9",
       path: "README.md",
       expected: "/notes/README",
     },
@@ -79,6 +79,24 @@ describe("노트 주소는 /notes/ 뒤에 볼트 경로에서 .md만 뺀 형태"
       expected: "/notes/Dev/ReadMe",
     },
     {
+      name: "이미 인코딩된 모양의 이름도 %를 다시 인코딩",
+      basis: "3절, BLOG-30 가정 10",
+      path: "a%20b.md",
+      expected: "/notes/a%2520b",
+    },
+    {
+      name: "퍼센트 인코딩된 점 이름은 점 조각이 되지 않음",
+      basis: "3절, 4-3 A1, BLOG-30 가정 10",
+      path: "%2e.md",
+      expected: "/notes/%252e",
+    },
+    {
+      name: "대문자로 퍼센트 인코딩된 점 두 개도 점 조각이 되지 않음",
+      basis: "3절, 4-3 A1, BLOG-30 가정 10",
+      path: "%2E%2E.md",
+      expected: "/notes/%252E%252E",
+    },
+    {
       name: "폴더 이름의 .md는 빼지 않음",
       basis: "3절",
       path: "a.md/b.md",
@@ -101,6 +119,12 @@ describe("첨부 파일 주소는 /assets/ 뒤에 볼트 경로를 그대로 붙
       basis: "3절, 4-2 3절",
       path: "a#b?.PNG",
       expected: "/assets/a%23b%3F.PNG",
+    },
+    {
+      name: "이미 인코딩된 모양의 첨부 이름도 %를 다시 인코딩",
+      basis: "3절, 4-2 3절, BLOG-30 가정 10",
+      path: "a%20b.png",
+      expected: "/assets/a%2520b.png",
     },
     {
       name: "이름에 .md가 들어간 첨부도 그대로 둠",
