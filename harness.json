@@ -1,0 +1,10 @@
+{
+  "private_dir": ".claude/docs/private",
+  "ticket_branch": "{type}/{key}-",
+  "statuses": {
+    "in_progress": "진행 중",
+    "in_review": "검토 중",
+    "done": "완료"
+  },
+  "verify": "fnm exec --using=26 -- pnpm verify"
+}
