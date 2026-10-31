@@ -7,7 +7,8 @@ import globals from "globals";
 const coreMessage =
   "core는 Node API를 쓰지 않음 (파일, git, DB, 현재 시각은 extractor가 다룸)";
 
-// if, for, while의 본문이 블록, return, throw, continue, 함수 호출 한 문장이 아니면 `{}`를 생략하지 않음 (BLOG-30, 2026-10-31 사용자 결정)
+// if·else와 반복문(for, for-in, for-of, while, do-while)의 본문이 블록, return, throw, continue, break,
+// 함수 호출(await, ?. 호출 포함) 한 문장이 아니면 `{}`를 생략하지 않음 (BLOG-30, 2026-10-31 사용자 결정)
 const bodyStatements = [
   "IfStatement > .consequent",
   "IfStatement > .alternate:not(IfStatement)",
@@ -19,11 +20,22 @@ const bodyStatements = [
     "DoWhileStatement",
   ].map((loop) => `${loop} > .body`),
 ];
-const allowedBody =
-  ":not(BlockStatement, ReturnStatement, ThrowStatement, ContinueStatement, ExpressionStatement[expression.type='CallExpression'])";
+const allowedBodies = [
+  "BlockStatement",
+  "ReturnStatement",
+  "ThrowStatement",
+  "ContinueStatement",
+  "BreakStatement",
+  "ExpressionStatement[expression.type='CallExpression']",
+  "ExpressionStatement[expression.type='ChainExpression'][expression.expression.type='CallExpression']",
+  "ExpressionStatement[expression.type='AwaitExpression'][expression.argument.type='CallExpression']",
+  "ExpressionStatement[expression.type='AwaitExpression'][expression.argument.type='ChainExpression'][expression.argument.expression.type='CallExpression']",
+];
+const allowedBody = `:not(${allowedBodies.join(", ")})`;
 const blockBodies = bodyStatements.map((body) => ({
   selector: `${body}${allowedBody}`,
-  message: "본문이 함수 호출, return, throw, continue 한 문장이 아니면 {}를 씀",
+  message:
+    "본문이 함수 호출, return, throw, continue, break 한 문장이 아니면 {}를 씀",
 }));
 
 export default defineConfig(
@@ -49,7 +61,7 @@ export default defineConfig(
     languageOptions: { globals: globals.node },
   },
   {
-    files: ["**/*.ts"],
+    files: ["**/*.{ts,js,mjs}"],
     rules: { "no-restricted-syntax": ["error", ...blockBodies] },
   },
   {
