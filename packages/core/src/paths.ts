@@ -11,11 +11,13 @@ const checkPaths = (
   findConflicts: (paths: readonly string[]) => Set<string>,
 ): Map<string, HoldReason> => {
   const held = new Map<string, HoldReason>();
+  const addressable: string[] = [];
   for (const path of paths) {
-    const reason = checkNfc(path) ?? checkAddress(path);
+    const address = checkAddress(path);
+    const reason = checkNfc(path) ?? address;
     if (reason) held.set(path, reason);
+    if (!address) addressable.push(path);
   }
-  const addressable = paths.filter((path) => !checkAddress(path));
   for (const path of findConflicts(addressable)) {
     if (!held.has(path)) held.set(path, HOLD_REASON.URL_CONFLICT);
   }
