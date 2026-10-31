@@ -15,8 +15,9 @@ const checkPaths = (
     if (reason) held.set(path, reason);
   }
   const addressable = paths.filter((path) => !checkAddress(path));
-  for (const path of findConflicts(addressable))
+  for (const path of findConflicts(addressable)) {
     if (!held.has(path)) held.set(path, URL_CONFLICT);
+  }
   return held;
 };
 

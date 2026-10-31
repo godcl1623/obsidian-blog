@@ -25,8 +25,9 @@ const findConflicts = (
   const conflicts = new Set<string>();
   for (const [key, same] of byKey) {
     const inside = byFolder.get(key) ?? [];
-    if (same.length > 1 || inside.length > 0)
+    if (same.length > 1 || inside.length > 0) {
       for (const path of [...same, ...inside]) conflicts.add(path);
+    }
   }
   return conflicts;
 };
