@@ -1,25 +1,25 @@
 import { describe, expect, it } from "vitest";
+import { HOLD_REASON } from "../src/constants";
 import { checkAssetPaths, checkNotePaths } from "../src/paths";
+import type { HoldReason } from "../src/types";
 
 // 가짜 경로만 씀. 실제 볼트는 열지 않음 (blog-plan.md 4-2 6절)
 const nfd = (path: string) => path.normalize("NFD");
 // 짝 없는 서로게이트. 주소로 인코딩할 수 없음
 const BROKEN_CHAR = "\uD800";
 
-const NOT_NFC = "경로가 NFC가 아님";
-const UNENCODABLE = "주소로 바꿀 수 없음";
-const CONFLICT = "URL 충돌";
+const { NOT_NFC, UNENCODABLE, URL_CONFLICT } = HOLD_REASON;
 
 type Row = {
   name: string;
   basis: string;
   paths: string[];
-  expected: Record<string, string>;
+  expected: Record<string, HoldReason>;
 };
 
 // 기대 출력은 보류할 경로와 사유. 없는 경로는 보류하지 않음
 const table = (
-  check: (paths: readonly string[]) => Map<string, string>,
+  check: (paths: readonly string[]) => Map<string, HoldReason>,
   rows: Row[],
 ) =>
   it.each(rows)("$name ($basis)", ({ paths, expected }) => {
@@ -204,13 +204,13 @@ describe("노트 확장자의 대소문자", () => {
       name: "확장자 대소문자만 다른 같은 노트 → 둘 다 보류",
       basis: "4-1 (0), 4-3 A1, BLOG-30 가정 8",
       paths: ["개발/노트.md", "개발/노트.MD"],
-      expected: { "개발/노트.md": CONFLICT, "개발/노트.MD": CONFLICT },
+      expected: { "개발/노트.md": URL_CONFLICT, "개발/노트.MD": URL_CONFLICT },
     },
     {
       name: "확장자가 대문자인 노트와 폴더가 겹침 → 둘 다 보류",
       basis: "4-1 (0), 4-3 A1, BLOG-30 가정 8",
       paths: ["개발.MD", "개발/a.md"],
-      expected: { "개발.MD": CONFLICT, "개발/a.md": CONFLICT },
+      expected: { "개발.MD": URL_CONFLICT, "개발/a.md": URL_CONFLICT },
     },
     {
       name: "이름과 확장자 대소문자가 모두 다름 → 충돌 아님",
@@ -228,7 +228,7 @@ describe("노트끼리 URL 충돌", () => {
       basis: "4-1 (0), 4-2 4절",
       paths: ["개발/노트.md", nfd("개발/노트.md")],
       expected: {
-        "개발/노트.md": CONFLICT,
+        "개발/노트.md": URL_CONFLICT,
         [nfd("개발/노트.md")]: NOT_NFC,
       },
     },
@@ -238,14 +238,14 @@ describe("노트끼리 URL 충돌", () => {
       paths: [nfd("개발/노트.md"), "개발/노트.md"],
       expected: {
         [nfd("개발/노트.md")]: NOT_NFC,
-        "개발/노트.md": CONFLICT,
+        "개발/노트.md": URL_CONFLICT,
       },
     },
     {
       name: "NFC로 바꾸면 같은 라틴 문자 노트 → 둘 다 보류",
       basis: "4-1 (0), 4-2 4절",
       paths: ["\u00E9.md", "e\u0301.md"],
-      expected: { "\u00E9.md": CONFLICT, "e\u0301.md": NOT_NFC },
+      expected: { "\u00E9.md": URL_CONFLICT, "e\u0301.md": NOT_NFC },
     },
     {
       name: "NFKC로만 같아지는 합자와 일반 글자 → 충돌 아님",
@@ -257,29 +257,29 @@ describe("노트끼리 URL 충돌", () => {
       name: "같은 경로가 두 번 들어옴 → 보류",
       basis: "4-1 (0), BLOG-30 가정 4",
       paths: ["개발/노트.md", "개발/노트.md"],
-      expected: { "개발/노트.md": CONFLICT },
+      expected: { "개발/노트.md": URL_CONFLICT },
     },
     {
       name: "노트 경로와 폴더 경로가 겹침 → 둘 다 보류",
       basis: "4-1 (0), 4-3 A1",
       paths: ["개발.md", "개발/노트.md"],
-      expected: { "개발.md": CONFLICT, "개발/노트.md": CONFLICT },
+      expected: { "개발.md": URL_CONFLICT, "개발/노트.md": URL_CONFLICT },
     },
     {
       name: "겹친 폴더 안의 노트는 하위 폴더까지 모두 보류, 다른 노트는 그대로",
       basis: "4-1 (0), 4-3 A1",
       paths: ["개발.md", "개발/a.md", "개발/하위/b.md", "기타.md"],
       expected: {
-        "개발.md": CONFLICT,
-        "개발/a.md": CONFLICT,
-        "개발/하위/b.md": CONFLICT,
+        "개발.md": URL_CONFLICT,
+        "개발/a.md": URL_CONFLICT,
+        "개발/하위/b.md": URL_CONFLICT,
       },
     },
     {
       name: "중간 폴더와 겹침 → 보류",
       basis: "4-1 (0), 4-3 A1",
       paths: ["a/b.md", "a/b/c.md"],
-      expected: { "a/b.md": CONFLICT, "a/b/c.md": CONFLICT },
+      expected: { "a/b.md": URL_CONFLICT, "a/b/c.md": URL_CONFLICT },
     },
     {
       name: "노트 이름이 자기 폴더 이름과 같음 → 충돌 아님",
@@ -291,19 +291,22 @@ describe("노트끼리 URL 충돌", () => {
       name: "NFC가 아닌 노트와 NFC 폴더가 겹침 → 둘 다 보류",
       basis: "4-1 (0), BLOG-30 가정 4",
       paths: [nfd("개발.md"), "개발/노트.md"],
-      expected: { [nfd("개발.md")]: NOT_NFC, "개발/노트.md": CONFLICT },
+      expected: { [nfd("개발.md")]: NOT_NFC, "개발/노트.md": URL_CONFLICT },
     },
     {
       name: "NFC 노트와 NFC가 아닌 폴더가 겹침 → 둘 다 보류",
       basis: "4-1 (0), BLOG-30 가정 4",
       paths: ["개발.md", `${nfd("개발")}/note.md`],
-      expected: { "개발.md": CONFLICT, [`${nfd("개발")}/note.md`]: NOT_NFC },
+      expected: {
+        "개발.md": URL_CONFLICT,
+        [`${nfd("개발")}/note.md`]: NOT_NFC,
+      },
     },
     {
       name: ".md를 뺀 노트 주소가 .md로 끝나는 폴더와 겹침 → 둘 다 보류",
       basis: "3절, 4-3 A1",
       paths: ["a.md.md", "a.md/x.md"],
-      expected: { "a.md.md": CONFLICT, "a.md/x.md": CONFLICT },
+      expected: { "a.md.md": URL_CONFLICT, "a.md/x.md": URL_CONFLICT },
     },
     {
       name: "대소문자만 다른 노트 → 충돌 아님",
@@ -368,13 +371,13 @@ describe("첨부 파일도 첨부끼리 같은 기준", () => {
       name: "NFC로 바꾸면 같은 첨부 → 둘 다 보류",
       basis: "4-1 (0), BLOG-30 가정 2",
       paths: ["그림/a.png", nfd("그림/a.png")],
-      expected: { "그림/a.png": CONFLICT, [nfd("그림/a.png")]: NOT_NFC },
+      expected: { "그림/a.png": URL_CONFLICT, [nfd("그림/a.png")]: NOT_NFC },
     },
     {
       name: "첨부 경로와 폴더 경로가 NFC로 겹침 → 둘 다 보류",
       basis: "4-1 (0), BLOG-30 가정 2",
       paths: [nfd("그림"), "그림/a.png"],
-      expected: { [nfd("그림")]: NOT_NFC, "그림/a.png": CONFLICT },
+      expected: { [nfd("그림")]: NOT_NFC, "그림/a.png": URL_CONFLICT },
     },
     {
       name: "낮은 서로게이트만 있음 → 보류",
