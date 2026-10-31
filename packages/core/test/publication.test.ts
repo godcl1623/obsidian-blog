@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { HOLD_REASON } from "../src/constants";
 import { decidePublication } from "../src/publication";
-import type { Decision } from "../src/types";
+import type { Decision, HoldReason } from "../src/types";
 
 // 가짜 노트만 씀. 실제 볼트는 열지 않음 (blog-plan.md 4-2 6절)
 const note = (frontmatter: string, body = "본문\n") =>
@@ -11,12 +12,11 @@ const APPROVED = [PATH];
 
 const PUBLIC: Decision = { kind: "public" };
 const PRIVATE: Decision = { kind: "private" };
-const held = (reason: string, line?: number): Decision =>
+const held = (reason: HoldReason, line?: number): Decision =>
   line === undefined
     ? { kind: "held", reason }
     : { kind: "held", reason, line };
-const BROKEN = "frontmatter를 읽을 수 없음";
-const UNAPPROVED = "승인 없음";
+const { BROKEN, UNAPPROVED } = HOLD_REASON;
 
 type Row = {
   name: string;

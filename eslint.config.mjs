@@ -7,6 +7,37 @@ import globals from "globals";
 const coreMessage =
   "core는 Node API를 쓰지 않음 (파일, git, DB, 현재 시각은 extractor가 다룸)";
 
+// if·else와 반복문(for, for-in, for-of, while, do-while)의 본문이 블록, return, throw, continue, break,
+// 함수 호출(await, ?. 호출 포함) 한 문장이 아니면 `{}`를 생략하지 않음 (BLOG-30, 2026-10-31 사용자 결정)
+const bodyStatements = [
+  "IfStatement > .consequent",
+  "IfStatement > .alternate:not(IfStatement)",
+  ...[
+    "ForStatement",
+    "ForOfStatement",
+    "ForInStatement",
+    "WhileStatement",
+    "DoWhileStatement",
+  ].map((loop) => `${loop} > .body`),
+];
+const allowedBodies = [
+  "BlockStatement",
+  "ReturnStatement",
+  "ThrowStatement",
+  "ContinueStatement",
+  "BreakStatement",
+  "ExpressionStatement[expression.type='CallExpression']",
+  "ExpressionStatement[expression.type='ChainExpression'][expression.expression.type='CallExpression']",
+  "ExpressionStatement[expression.type='AwaitExpression'][expression.argument.type='CallExpression']",
+  "ExpressionStatement[expression.type='AwaitExpression'][expression.argument.type='ChainExpression'][expression.argument.expression.type='CallExpression']",
+];
+const allowedBody = `:not(${allowedBodies.join(", ")})`;
+const blockBodies = bodyStatements.map((body) => ({
+  selector: `${body}${allowedBody}`,
+  message:
+    "본문이 함수 호출, return, throw, continue, break 한 문장이 아니면 {}를 씀",
+}));
+
 export default defineConfig(
   js.configs.recommended,
   tseslint.configs.recommended,
@@ -30,6 +61,10 @@ export default defineConfig(
     languageOptions: { globals: globals.node },
   },
   {
+    files: ["**/*.{ts,js,mjs}"],
+    rules: { "no-restricted-syntax": ["error", ...blockBodies] },
+  },
+  {
     files: ["packages/core/**"],
     rules: {
       "no-restricted-imports": [
@@ -45,8 +80,10 @@ export default defineConfig(
         "error",
         { name: "process", message: coreMessage },
       ],
+      // 같은 규칙을 뒤에서 다시 정하면 앞의 선택자를 덮으므로 블록 생략 선택자를 함께 넣음
       "no-restricted-syntax": [
         "error",
+        ...blockBodies,
         {
           selector:
             "CallExpression[callee.object.name='Date'][callee.property.name='now']",

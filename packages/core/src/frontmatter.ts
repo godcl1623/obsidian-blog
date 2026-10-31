@@ -6,13 +6,13 @@ import {
   parseDocument,
   type Node,
 } from "yaml";
-import { BROKEN, PRIVATE } from "./constants";
+import { HOLD_REASON, PRIVATE } from "./constants";
 import type { Decision, ParsedFrontmatter, Step } from "./types";
 
 const held = (line?: number): Decision =>
   line === undefined
-    ? { kind: "held", reason: BROKEN }
-    : { kind: "held", reason: BROKEN, line };
+    ? { kind: "held", reason: HOLD_REASON.BROKEN }
+    : { kind: "held", reason: HOLD_REASON.BROKEN, line };
 
 // 첫 줄이 정확히 `---`일 때만 frontmatter로 봄. 닫는 `---`가 없으면 보류함
 export const extractFrontmatter = (content: string): Step<string> => {
