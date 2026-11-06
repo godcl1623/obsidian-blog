@@ -20,3 +20,6 @@ export const WARNING = {
   UNCLOSED_COMMENT: "닫히지 않은 %% 주석을 노트 끝까지 지움",
   UNCLOSED_HTML_COMMENT: "닫히지 않은 HTML 주석을 지움",
 } as const;
+
+// 원문 범위를 모으는 마크다운 노드 종류: 코드(펜스, 들여쓰기, 인라인)와 HTML
+export const SPAN_TYPES = ["code", "inlineCode", "html"] as const;

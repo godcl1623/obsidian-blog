@@ -1,5 +1,5 @@
 import type { Document, LineCounter } from "yaml";
-import type { HOLD_REASON, WARNING } from "./constants";
+import type { HOLD_REASON, SPAN_TYPES, WARNING } from "./constants";
 
 // 보류 사유는 HOLD_REASON의 고정 문구 가운데 하나뿐임
 export type HoldReason = (typeof HOLD_REASON)[keyof typeof HOLD_REASON];
@@ -24,8 +24,15 @@ export type WarningMessage = (typeof WARNING)[keyof typeof WARNING];
 
 export type Warning = { message: WarningMessage; line: number };
 
+export type SpanType = (typeof SPAN_TYPES)[number];
+
 // 마크다운 구문 트리 노드의 종류, 원문 범위 [start, end), 값(줄 앞 컨테이너 표시를 뺀 내용)
-export type Span = { type: string; start: number; end: number; value: string };
+export type Span = {
+  type: SpanType;
+  start: number;
+  end: number;
+  value: string;
+};
 
 // 원문 [start, end)를 text로 바꾸는 편집
 export type Edit = { start: number; end: number; text: string };
