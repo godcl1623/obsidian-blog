@@ -8,30 +8,28 @@ const processor = unified().use(remarkParse).use(remarkGfm);
 
 type Node = {
   type: string;
+  value?: string;
   position?: { start: { offset?: number }; end: { offset?: number } };
   children?: Node[];
 };
 
-// 코드(펜스, 들여쓰기, 인라인)와 HTML 노드의 원문 범위를 문서 순서대로 모음. 코드 안은 HTML로 읽히지 않음
+// 코드(펜스, 들여쓰기, 인라인)와 HTML 노드의 원문 범위와 값을 문서 순서대로 모음. 코드 안은 HTML로 읽히지 않음
+// 값은 원문에서 줄 앞의 컨테이너 표시(인용의 >, 목록 들여쓰기)를 뺀 것임
 const SPAN_TYPES = ["code", "inlineCode", "html"];
 
-// quoted는 인용 안의 노드인지임. 인용 안 노드의 원문 범위에는 줄마다 앞의 `>` 표시가 들어 있음
 export const findSpans = (text: string): Span[] => {
   const spans: Span[] = [];
-  const visit = (node: Node, quoted: boolean) => {
-    if (!SPAN_TYPES.includes(node.type)) {
-      const inQuote = quoted || node.type === "blockquote";
-      return node.children?.forEach((child) => visit(child, inQuote));
-    }
-    // remark-parse가 만든 노드에는 늘 위치가 있음
+  const visit = (node: Node) => {
+    if (!SPAN_TYPES.includes(node.type)) return node.children?.forEach(visit);
+    // remark-parse가 만든 노드에는 늘 위치와 값이 있음
     const { start, end } = node.position!;
     spans.push({
       type: node.type,
       start: start.offset!,
       end: end.offset!,
-      quoted,
+      value: node.value!,
     });
   };
-  visit(processor.parse(text), false);
+  visit(processor.parse(text));
   return spans;
 };

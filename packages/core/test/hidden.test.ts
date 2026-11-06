@@ -46,6 +46,12 @@ describe("%% 주석 지우기", () => {
       expected: { body: "앞\n\n뒤\n" },
     },
     {
+      name: "빈 주석 %%%%",
+      basis: "4-2 2절",
+      content: note("a %%%% b\n"),
+      expected: { body: "a  b\n" },
+    },
+    {
       name: "한 줄에 주석 둘",
       basis: "4-2 2절",
       content: note("a %%x%% b %%y%% c\n"),
@@ -179,6 +185,25 @@ describe("HTML 주석 지우기", () => {
       content: note("앞 <!-- 숨김\n\n숨김 --> 뒤\n"),
       expected: { body: "앞  뒤\n" },
     },
+    // 가정 7(2026-11-06 사용자 결정): HTML 밖에서 연 <!--도 코드 경계와 상관없이 처음 -->에서 닫음
+    {
+      name: "HTML 밖에서 연 <!--는 코드 블록 안의 -->에서도 닫음",
+      basis: "4-2 2절, 가정 7",
+      content: note("앞 <!-- 숨김\n\n```\n숨김 -->\n보임\n```\n"),
+      expected: { body: "앞 \n보임\n```\n" },
+    },
+    {
+      name: "HTML 밖에서 연 <!--는 인라인 코드 안의 -->에서도 닫음",
+      basis: "4-2 2절, 가정 7",
+      content: note("앞 <!-- 숨김 `-->` 보임\n"),
+      expected: { body: "앞 ` 보임\n" },
+    },
+    {
+      name: "바로 닫히는 <!-->와 <!--->",
+      basis: "4-2 2절",
+      content: note("a <!--> b <!---> c\n"),
+      expected: { body: "a  b  c\n" },
+    },
     {
       name: "이미지 대체 글 안의 주석",
       basis: "4-2 2절, 가정 6",
@@ -238,6 +263,24 @@ describe("인용, 목록, 콜아웃 안", () => {
       name: "인용 안 HTML 블록의 여러 줄 허용 태그",
       basis: "4-2 2절",
       content: note("> <details\n> open>\n> 내용\n> </details>\n"),
+      expected: { body: "> <details>\n> 내용\n> </details>\n" },
+    },
+    {
+      name: "인용 두 겹 안의 여러 줄 허용 태그",
+      basis: "4-2 2절",
+      content: note('> > a <mark\n> > title="숨김">b</mark>\n'),
+      expected: { body: "> > a <mark>b</mark>\n" },
+    },
+    {
+      name: "목록 안 인용의 여러 줄 허용 태그",
+      basis: "4-2 2절",
+      content: note('- > a <mark\n  > title="숨김">b</mark>\n'),
+      expected: { body: "- > a <mark>b</mark>\n" },
+    },
+    {
+      name: "인용 안 HTML 블록에서 태그를 닫는 >가 다음 줄의 인용 표시 뒤에 옴",
+      basis: "4-2 2절",
+      content: note('> <details title="숨김"\n> >\n> 내용\n> </details>\n'),
       expected: { body: "> <details>\n> 내용\n> </details>\n" },
     },
     {
@@ -448,6 +491,13 @@ describe("frontmatter: 본문에서 빼고 title, description만 돌려줌", () 
   ]);
 });
 
+// 가정 8(2026-11-06 사용자 결정): HTML 노드 값과 원문의 줄 끝이 맞지 않으면 예외로 그 노트를 보류하게 함 (4-2 4절)
+it("인용 표시 뒤의 탭으로 HTML 값과 원문이 맞지 않으면 예외 (4-2 4절, 가정 8)", () => {
+  expect(() =>
+    stripHidden(note(">\t<details>\n>\t내용\n>\t</details>\n")),
+  ).toThrow("HTML 위치를 원문과 맞출 수 없음");
+});
+
 // stripHidden은 공개로 판정된 노트에만 부르므로 frontmatter를 꺼낼 수 없는 입력은 오지 않아야 함
 // 그래도 오면 frontmatter를 본문에 남기지 않도록 예외로 그 노트를 보류하게 함 (4-2 4절)
 describe("frontmatter 경계", () => {
@@ -481,6 +531,7 @@ describe("지운 내용은 결과 어디에도 남지 않음", () => {
         '[보임](x.png "보임 <!-- CANARY-015 -->")',
         '> a <mark\n> title="CANARY-016">보임</mark>',
         "보임 <!-- CANARY-017 --> 보임",
+        '> <details title="CANARY-018"\n> >\n> 보임\n> </details>',
         "<!-- CANARY-008",
         "",
         "CANARY-009",

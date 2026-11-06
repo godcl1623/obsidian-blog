@@ -1,27 +1,51 @@
 import { findSpans } from "./markdown";
-import type { Edit } from "./types";
+import type { Edit, Span } from "./types";
 
 // 허용 태그 이름 뒤에는 공백, /, > 가운데 하나가 와야 함(`<bra>`는 허용 밖). 속성 값 안의 >는 태그 끝이 아님
 const ALLOWED_TAG =
   /^<(\/?)(br|sup|sub|kbd|mark|details|summary)(?=[\s/>])(?:[^>"']|"[^"]*"|'[^']*')*>/i;
-// 인용 안에서는 줄바꿈 뒤의 `>`가 인용 표시이므로 태그 끝으로 보지 않고 모두 넘김
-const QUOTED_TAG =
-  /^<(\/?)(br|sup|sub|kbd|mark|details|summary)(?=[\s/>])(?:\n(?:[ \t]*>)*(?![ \t]*>)|[^>"'\n]|"[^"]*"|'[^']*')*>/i;
 
-// HTML 노드 안의 <마다 허용 태그면 속성을 뺀 소문자 태그로, 아니면 &lt;로 바꿔 글자로 보이게 함 (blog-plan.md 4-2 2절)
-// 편집은 앞에서 뒤 순서로 돌려줌
+// HTML 노드 값의 위치를 원문 위치로 바꾸는 함수. 값은 원문에서 줄 앞의 컨테이너 표시를 뺀 것이므로 줄마다 끝을 맞춤
+// 줄 끝이 맞지 않으면(표시 뒤의 탭이 공백으로 바뀐 경우 등) 위치를 알 수 없으므로 예외로 그 노트를 보류하게 함 (4-2 4절)
+const valueToSource = (body: string, { start, end, value }: Span) => {
+  const source = body.slice(start, end).split("\n");
+  const lines = value.split("\n");
+  if (
+    source.length !== lines.length ||
+    source.some((line, index) => !line.endsWith(lines[index]))
+  ) {
+    throw new Error("HTML 위치를 원문과 맞출 수 없음");
+  }
+  const lineStarts: number[] = [];
+  let at = start;
+  source.forEach((line, index) => {
+    lineStarts.push(at + line.length - lines[index].length);
+    at += line.length + 1;
+  });
+  return (position: number) => {
+    const before = value.slice(0, position).split("\n");
+    return lineStarts[before.length - 1] + before[before.length - 1].length;
+  };
+};
+
+// HTML 노드 값의 <마다 허용 태그면 속성을 뺀 소문자 태그로, 아니면 &lt;로 바꿔 글자로 보이게 함 (blog-plan.md 4-2 2절)
+// 해석기가 컨테이너 표시를 뺀 값에서 태그를 찾으므로 인용 안에서도 줄 앞의 >를 태그 끝으로 읽지 않음. 편집은 앞에서 뒤 순서로 돌려줌
 export const findTagEdits = (body: string): Edit[] => {
   const edits: Edit[] = [];
-  for (const { type, start: from, end: until, quoted } of findSpans(body)) {
-    if (type !== "html") continue;
-    const allowed = quoted ? QUOTED_TAG : ALLOWED_TAG;
-    let start = body.indexOf("<", from);
-    while (start !== -1 && start < until) {
-      const tag = allowed.exec(body.slice(start, until));
+  for (const span of findSpans(body)) {
+    if (span.type !== "html") continue;
+    const { value } = span;
+    const toSource = valueToSource(body, span);
+    let start = value.indexOf("<");
+    while (start !== -1) {
+      const tag = ALLOWED_TAG.exec(value.slice(start));
       const end = start + (tag ? tag[0].length : 1);
       const text = tag ? `<${tag[1]}${tag[2].toLowerCase()}>` : "&lt;";
-      if (body.slice(start, end) !== text) edits.push({ start, end, text });
-      start = body.indexOf("<", end);
+      const from = toSource(start);
+      const to = toSource(end - 1) + 1;
+      if (body.slice(from, to) !== text)
+        edits.push({ start: from, end: to, text });
+      start = value.indexOf("<", end);
     }
   }
   return edits;
