@@ -1,7 +1,7 @@
 import { findComment } from "./comments";
-import { applyEdit, toOriginal } from "./edits";
-import { findTagEdits } from "./html";
-import type { Edit, WarningMessage } from "./types";
+import { applyEdit, toOriginal } from "./text-edits";
+import { findTagEdits } from "./html-tags";
+import type { Edit, WarningMessage } from "../types";
 
 // 주석을 하나씩 지우고 태그를 정리하기를 더 바뀌지 않을 때까지 되풀이함. 지운 결과가 새 주석이나 태그가 될 수 있기 때문
 // 경고 줄 번호는 처음 본문 기준임

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HOLD_REASON } from "../src/constants";
-import { checkAssetPaths, checkNotePaths } from "../src/paths";
+import { checkAssetPaths, checkNotePaths } from "../src/address/held-paths";
 import type { HoldReason } from "../src/types";
 
 // 가짜 경로만 씀. 실제 볼트는 열지 않음 (blog-plan.md 4-2 6절)

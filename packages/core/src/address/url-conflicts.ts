@@ -1,4 +1,4 @@
-import { NOTE_EXTENSION } from "./constants";
+import { NOTE_EXTENSION } from "../constants";
 
 // `a/b/c` → [`a`, `a/b`]
 const folders = (key: string): string[] => {

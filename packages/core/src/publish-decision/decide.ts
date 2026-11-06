@@ -1,12 +1,12 @@
-import { HOLD_REASON, PUBLIC } from "./constants";
+import { HOLD_REASON, PUBLIC } from "../constants";
 import {
   checkLineSeparators,
   checkPropertyFormat,
   extractFrontmatter,
   parseFrontmatter,
-} from "./frontmatter";
+} from "./frontmatter-format";
 import { checkSettings } from "./settings";
-import type { Decision } from "./types";
+import type { Decision } from "../types";
 
 // 승인 경로는 git이 저장한 경로 문자열과 글자 그대로 비교함 (blog-plan.md 4-1 (0))
 const checkApproval = (path: string, approvals: readonly string[]): Decision =>

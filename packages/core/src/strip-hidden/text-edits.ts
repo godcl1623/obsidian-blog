@@ -1,4 +1,4 @@
-import type { Edit } from "./types";
+import type { Edit } from "../types";
 
 export const applyEdit = (text: string, { start, end, text: to }: Edit) =>
   text.slice(0, start) + to + text.slice(end);

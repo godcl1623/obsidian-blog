@@ -1,5 +1,5 @@
-import { HOLD_REASON } from "./constants";
-import type { HoldReason } from "./types";
+import { HOLD_REASON } from "../constants";
+import type { HoldReason } from "../types";
 
 // 경로를 고치지 않고 보류만 함. 고치는 일은 사람이 함 (blog-plan.md 4-1 (0))
 export const checkNfc = (path: string): HoldReason | undefined =>

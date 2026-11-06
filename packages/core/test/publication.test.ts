@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HOLD_REASON } from "../src/constants";
-import { decidePublication } from "../src/publication";
+import { decidePublication } from "../src/publish-decision/decide";
 import type { Decision, HoldReason } from "../src/types";
 
 // 가짜 노트만 씀. 실제 볼트는 열지 않음 (blog-plan.md 4-2 6절)

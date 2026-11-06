@@ -1,7 +1,7 @@
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
-import type { Span } from "./types";
+import type { Span } from "../types";
 
 // 렌더링과 같은 문법(remark-parse, remark-gfm)으로 읽음 (blog-plan.md 4-3 A2)
 const processor = unified().use(remarkParse).use(remarkGfm);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assetUrl, noteUrl } from "../src/url";
+import { assetUrl, noteUrl } from "../src/address/url";
 
 type Row = { name: string; basis: string; path: string; expected: string };
 

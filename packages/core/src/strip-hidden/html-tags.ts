@@ -1,5 +1,5 @@
-import { findSpans } from "./markdown";
-import type { Edit, Span } from "./types";
+import { findSpans } from "./code-spans";
+import type { Edit, Span } from "../types";
 
 // 허용 태그 이름 뒤에는 공백, /, > 가운데 하나가 와야 함(`<bra>`는 허용 밖). 속성 값 안의 >는 태그 끝이 아님
 const ALLOWED_TAG =

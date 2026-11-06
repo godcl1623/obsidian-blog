@@ -1,6 +1,6 @@
-import { WARNING } from "./constants";
-import { findSpans } from "./markdown";
-import type { Edit, Span, WarningMessage } from "./types";
+import { WARNING } from "../constants";
+import { findSpans } from "./code-spans";
+import type { Edit, Span, WarningMessage } from "../types";
 
 type Found = { edit: Edit; warning?: WarningMessage };
 

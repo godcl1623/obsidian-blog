@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HOLD_REASON, WARNING } from "../src/constants";
-import { stripHidden } from "../src/hidden";
+import { stripHidden } from "../src/strip-hidden/strip-hidden";
 import type { Stripped } from "../src/types";
 
 // 가짜 노트만 씀. 실제 볼트는 열지 않음 (blog-plan.md 4-2 6절)
