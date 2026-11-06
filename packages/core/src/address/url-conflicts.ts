@@ -1,4 +1,4 @@
-import { NOTE_EXTENSION } from "./constants";
+import { NOTE_EXTENSION } from "../constants";
 
 // `a/b/c` → [`a`, `a/b`]
 const folders = (key: string): string[] => {
@@ -25,7 +25,8 @@ const findConflicts = (
   const conflicts = new Set<string>();
   for (const [key, same] of byKey) {
     const inside = byFolder.get(key) ?? [];
-    if (same.length > 1 || inside.length > 0) {
+    const conflicted = same.length > 1 || inside.length > 0;
+    if (conflicted) {
       for (const path of [...same, ...inside]) conflicts.add(path);
     }
   }

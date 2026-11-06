@@ -66,8 +66,8 @@ describe("CANARY 검사기", () => {
 
   it("가짜 노트 모음의 표식 001~020을 모두 찾음", () => {
     const check = () => assertNoCanaryInDir(fixture("vault"));
-    for (let i = 1; i <= 20; i++) {
-      const id = String(i).padStart(3, "0");
+    for (const number of Array.from({ length: 20 }, (_, i) => i + 1)) {
+      const id = String(number).padStart(3, "0");
       expect(check).toThrow(new RegExp(`CANARY-${id} `, "i"));
     }
   });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HOLD_REASON } from "../src/constants";
-import { decidePublication } from "../src/publication";
+import { decidePublication } from "../src/publish-decision/decide";
 import type { Decision, HoldReason } from "../src/types";
 
 // 가짜 노트만 씀. 실제 볼트는 열지 않음 (blog-plan.md 4-2 6절)
@@ -8,24 +8,24 @@ const note = (frontmatter: string, body = "본문\n") =>
   `---\n${frontmatter}\n---\n${body}`;
 
 const PATH = "공개 글/노트.md";
-const APPROVED = [PATH];
+const APPROVED = [PATH] as const;
 
-const PUBLIC: Decision = { kind: "public" };
-const PRIVATE: Decision = { kind: "private" };
-const held = (reason: HoldReason, line?: number): Decision =>
-  line === undefined
-    ? { kind: "held", reason }
-    : { kind: "held", reason, line };
+const PUBLIC = { kind: "public" } as const satisfies Decision;
+const PRIVATE = { kind: "private" } as const satisfies Decision;
+const held = (reason: HoldReason, line?: number): Decision => {
+  const noLine = line === undefined;
+  return noLine ? { kind: "held", reason } : { kind: "held", reason, line };
+};
 const { BROKEN, UNAPPROVED } = HOLD_REASON;
 
-type Row = {
+interface Row {
   name: string;
   basis: string;
   path?: string;
   content: string;
   approvals?: readonly string[];
   expected: Decision;
-};
+}
 
 const table = (rows: Row[]) =>
   it.each(rows)(

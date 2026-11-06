@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { assetUrl, noteUrl } from "../src/url";
+import { assetUrl, noteUrl } from "../src/address/url";
 
-type Row = { name: string; basis: string; path: string; expected: string };
+interface Row {
+  name: string;
+  basis: string;
+  path: string;
+  expected: string;
+}
 
 const table = (convert: (path: string) => string, rows: Row[]) =>
   it.each(rows)("$name ($basis)", ({ path, expected }) => {

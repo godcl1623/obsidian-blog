@@ -9,7 +9,8 @@ const expected = readFileSync(
   .split(".")[0];
 const actual = process.versions.node.split(".")[0];
 
-if (actual !== expected) {
+const mismatched = actual !== expected;
+if (mismatched) {
   console.error(
     `Node ${expected} 버전이 필요하지만 ${process.versions.node}로 실행됨. fnm exec --using=${expected} -- pnpm verify 로 실행할 것`,
   );

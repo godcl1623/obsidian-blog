@@ -27,23 +27,26 @@ const reads = [
 ];
 const globs = ["glob", "globSync"];
 
+interface GlobOptions {
+  cwd?: string | URL;
+}
+
 const check = (path: unknown): void => {
   // 가드를 거친 open이 준 파일 디스크립터와 FileHandle
-  if (
+  const opened =
     typeof path === "number" ||
-    (typeof path === "object" && path !== null && "fd" in path)
-  )
-    return;
-  const target = resolve(
-    path instanceof URL ? fileURLToPath(path) : String(path),
-  );
+    (typeof path === "object" && path !== null && "fd" in path);
+  if (opened) return;
+  const isUrl = path instanceof URL;
+  const target = resolve(isUrl ? fileURLToPath(path) : String(path));
   let real = target;
   try {
     real = realpathSync(target);
   } catch {
     // 없는 경로는 읽어도 실패하므로 문자열 경로로 판단함
   }
-  if (!(real + sep).startsWith(fixtures)) {
+  const inFixtures = (real + sep).startsWith(fixtures);
+  if (!inFixtures) {
     throw new Error(`fixtures 밖의 파일을 읽으려 함: ${real}`);
   }
 };
@@ -54,16 +57,19 @@ const guard = <T>(mod: T): T => {
   };
   for (const name of [...reads, ...globs]) {
     const original = wrapped[name];
-    if (typeof original !== "function") continue;
+    const isFunction = typeof original === "function";
+    if (!isFunction) continue;
     wrapped[name] = (first: unknown, ...rest: unknown[]) => {
-      if (globs.includes(name)) {
+      const isGlob = globs.includes(name);
+      if (isGlob) {
         const options = rest.find(
           (arg) => typeof arg === "object" && arg !== null,
-        ) as { cwd?: string | URL } | undefined;
-        const cwd =
-          options?.cwd instanceof URL
-            ? fileURLToPath(options.cwd)
-            : (options?.cwd ?? process.cwd());
+        ) as GlobOptions | undefined;
+        const cwdOption = options?.cwd;
+        const cwdIsUrl = cwdOption instanceof URL;
+        const cwd = cwdIsUrl
+          ? fileURLToPath(cwdOption)
+          : (cwdOption ?? process.cwd());
         for (const pattern of [first].flat())
           check(resolve(cwd, String(pattern)));
       } else {
@@ -74,8 +80,10 @@ const guard = <T>(mod: T): T => {
   }
   // import fs from "node:fs"와 fs.promises로 돌아가는 길도 막음
   for (const key of ["default", "promises"]) {
-    if (typeof wrapped[key] === "object" && wrapped[key] !== null) {
-      wrapped[key] = guard(wrapped[key]);
+    const inner = wrapped[key];
+    const isObject = typeof inner === "object" && inner !== null;
+    if (isObject) {
+      wrapped[key] = guard(inner);
     }
   }
   return wrapped as T;

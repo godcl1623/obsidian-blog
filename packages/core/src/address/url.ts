@@ -1,4 +1,4 @@
-import { NOTE_EXTENSION } from "./constants";
+import { NOTE_EXTENSION } from "../constants";
 
 // 경로를 `/`로 나눈 조각마다 인코딩함. 한글도 %XX로 바뀜 (blog-plan.md 3절, BLOG-30 가정 1)
 const encodePath = (path: string): string =>
