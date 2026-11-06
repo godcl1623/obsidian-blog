@@ -1,5 +1,5 @@
 import type { Document, LineCounter } from "yaml";
-import type { HOLD_REASON } from "./constants";
+import type { HOLD_REASON, WARNING } from "./constants";
 
 // 보류 사유는 HOLD_REASON의 고정 문구 가운데 하나뿐임
 export type HoldReason = (typeof HOLD_REASON)[keyof typeof HOLD_REASON];
@@ -17,4 +17,23 @@ export type ParsedFrontmatter = {
   text: string;
   doc: Document;
   lineCounter: LineCounter;
+};
+
+// 경고 문구는 WARNING의 고정 문구 가운데 하나뿐이고, 줄 번호는 원본 노트 기준임
+export type WarningMessage = (typeof WARNING)[keyof typeof WARNING];
+
+export type Warning = { message: WarningMessage; line: number };
+
+// 마크다운 구문 트리 노드의 종류와 원문 범위 [start, end)
+export type Span = { type: string; start: number; end: number };
+
+// 원문 [start, end)를 text로 바꾸는 편집
+export type Edit = { start: number; end: number; text: string };
+
+// 숨은 유출 경로를 지운 결과: frontmatter를 뺀 본문과 frontmatter에서 내보내는 값 (blog-plan.md 4-2 2절, 3절)
+export type Stripped = {
+  body: string;
+  title?: string;
+  description?: string;
+  warnings: Warning[];
 };
