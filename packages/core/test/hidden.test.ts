@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { WARNING } from "../src/constants";
+import { HOLD_REASON, WARNING } from "../src/constants";
 import { stripHidden } from "../src/hidden";
 import type { Stripped } from "../src/types";
 
@@ -163,12 +163,95 @@ describe("HTML 주석 지우기", () => {
         warnings: [{ message: UNCLOSED_HTML_COMMENT, line: 5 }],
       },
     },
-    // 가정 2의 작성자 해석: 마크다운이 HTML로 보지 않아 화면에 글자로 보이므로 지우지 않음
-    kept(
-      "문단 안의 닫히지 않은 <!--는 글자라 그대로 둠",
-      "4-2 2절, 가정 2",
-      "앞 <!-- 보임\n",
-    ),
+    // 가정 6(2026-11-06 사용자 결정): HTML로 읽히지 않는 자리의 <!--도 주석이며, 닫히지 않으면 노트 끝까지 지우고 경고
+    {
+      name: "문단 안의 닫히지 않은 <!--는 노트 끝까지 지우고 경고",
+      basis: "4-2 2절, 가정 6",
+      content: note("앞 <!-- 숨김\n\n숨김\n"),
+      expected: {
+        body: "앞 ",
+        warnings: [{ message: UNCLOSED_HTML_COMMENT, line: 4 }],
+      },
+    },
+    {
+      name: "HTML 밖에서 연 <!--는 문단을 넘어 다음 -->에서 닫음",
+      basis: "4-2 2절, 가정 6",
+      content: note("앞 <!-- 숨김\n\n숨김 --> 뒤\n"),
+      expected: { body: "앞  뒤\n" },
+    },
+    {
+      name: "이미지 대체 글 안의 주석",
+      basis: "4-2 2절, 가정 6",
+      content: note("![a <!-- 숨김 --> b](x.png)\n"),
+      expected: { body: "![a  b](x.png)\n" },
+    },
+    {
+      name: "참조형 이미지 대체 글 안의 주석",
+      basis: "4-2 2절, 가정 6",
+      content: note("![a <!-- 숨김 -->][r]\n\n[r]: x.png\n"),
+      expected: { body: "![a ][r]\n\n[r]: x.png\n" },
+    },
+    {
+      name: "링크 제목과 참조 정의 제목 안의 주석",
+      basis: "4-2 2절, 가정 6",
+      content: note(
+        '[a](x.png "t <!-- 숨김 -->")\n\n[r]: y.png "u <!-- 숨김 -->"\n',
+      ),
+      expected: { body: '[a](x.png "t ")\n\n[r]: y.png "u "\n' },
+    },
+  ]);
+});
+
+describe("인용, 목록, 콜아웃 안", () => {
+  table([
+    {
+      name: "인용 안의 주석",
+      basis: "4-2 2절",
+      content: note("> <!-- 숨김 -->\n"),
+      expected: { body: "> \n" },
+    },
+    {
+      name: "목록 안의 주석",
+      basis: "4-2 2절",
+      content: note("- <!-- 숨김 -->\n"),
+      expected: { body: "- \n" },
+    },
+    {
+      name: "콜아웃 안의 여러 줄 주석",
+      basis: "4-2 2절",
+      content: note("> [!note]\n> <!--\n> 숨김\n> -->\n"),
+      expected: { body: "> [!note]\n> \n" },
+    },
+    {
+      name: "인용 안의 허용 밖 태그는 글자로",
+      basis: "4-2 2절",
+      content: note("> <span>a</span>\n"),
+      expected: { body: "> &lt;span>a&lt;/span>\n" },
+    },
+    {
+      name: "인용 안에서 여러 줄에 걸친 허용 태그의 속성도 지움",
+      basis: "4-2 2절",
+      content: note('> a <mark\n> title="숨김">b</mark>\n'),
+      expected: { body: "> a <mark>b</mark>\n" },
+    },
+    {
+      name: "인용 안 HTML 블록의 여러 줄 허용 태그",
+      basis: "4-2 2절",
+      content: note("> <details\n> open>\n> 내용\n> </details>\n"),
+      expected: { body: "> <details>\n> 내용\n> </details>\n" },
+    },
+    {
+      name: "인용 밖 HTML 블록에서는 줄바꿈 뒤의 >가 태그 끝",
+      basis: "4-2 2절",
+      content: note("<details\n>\n내용\n</details>\n"),
+      expected: { body: "<details>\n내용\n</details>\n" },
+    },
+    {
+      name: "문단 안에서 여러 줄에 걸친 허용 태그의 속성도 지움",
+      basis: "4-2 2절",
+      content: note('a <mark\ntitle="숨김">b</mark>\n'),
+      expected: { body: "a <mark>b</mark>\n" },
+    },
   ]);
 });
 
@@ -365,6 +448,25 @@ describe("frontmatter: 본문에서 빼고 title, description만 돌려줌", () 
   ]);
 });
 
+// stripHidden은 공개로 판정된 노트에만 부르므로 frontmatter를 꺼낼 수 없는 입력은 오지 않아야 함
+// 그래도 오면 frontmatter를 본문에 남기지 않도록 예외로 그 노트를 보류하게 함 (4-2 4절)
+describe("frontmatter 경계", () => {
+  table([
+    {
+      name: "frontmatter가 없는 노트는 전체가 본문",
+      basis: "4-2 3절",
+      content: "본문\n",
+      expected: { body: "본문\n" },
+    },
+  ]);
+  it.each([
+    { name: "닫는 ---가 없음", content: "---\npublish: true\n본문\n" },
+    { name: "YAML로 읽을 수 없음", content: "---\n: :\n---\n본문\n" },
+  ])("$name → 고정 문구의 예외 (4-2 4절)", ({ content }) => {
+    expect(() => stripHidden(content)).toThrow(HOLD_REASON.BROKEN);
+  });
+});
+
 describe("지운 내용은 결과 어디에도 남지 않음", () => {
   it("숨긴 곳마다 넣은 CANARY 표식이 본문, 값, 경고에 없음 (4-2 2절, 4-2 6절)", () => {
     const content = note(
@@ -375,6 +477,10 @@ describe("지운 내용은 결과 어디에도 남지 않음", () => {
         '<mark data-x="CANARY-004" title=CANARY-005>보임</mark>',
         "<!--\nCANARY-006\n-->",
         "<details>\n<!-- CANARY-007 -->\n</details>",
+        "![보임 <!-- CANARY-014 -->](x.png)",
+        '[보임](x.png "보임 <!-- CANARY-015 -->")',
+        '> a <mark\n> title="CANARY-016">보임</mark>',
+        "보임 <!-- CANARY-017 --> 보임",
         "<!-- CANARY-008",
         "",
         "CANARY-009",

@@ -24,8 +24,13 @@ export type WarningMessage = (typeof WARNING)[keyof typeof WARNING];
 
 export type Warning = { message: WarningMessage; line: number };
 
-// 마크다운 구문 트리 노드의 종류와 원문 범위 [start, end)
-export type Span = { type: string; start: number; end: number };
+// 마크다운 구문 트리 노드의 종류와 원문 범위 [start, end), 인용 안 여부
+export type Span = {
+  type: string;
+  start: number;
+  end: number;
+  quoted: boolean;
+};
 
 // 원문 [start, end)를 text로 바꾸는 편집
 export type Edit = { start: number; end: number; text: string };
