@@ -54,26 +54,46 @@ const conditionRules = [
   },
 ];
 
-// 타입이 필요하면 인라인 객체 타입을 쓰지 않고 interface나 타입 별칭으로 선언함. 유니언 등 타입 별칭 안의 객체 타입은 허용함 (BLOG-31, 2026-11-06 사용자 결정)
+// 타입이 필요하면 인라인 객체 타입을 쓰지 않고 interface로 선언함. 타입 별칭이 바로 유니언일 때 그 구성원인 객체 타입만 허용함
+// (`Readonly<{}>`, `{} & B`, `Array<{}>`는 막음) (BLOG-31, 2026-11-06 사용자 결정)
 const inlineTypeRule = {
-  selector: "TSTypeLiteral:not(TSTypeAliasDeclaration TSTypeLiteral)",
+  selector:
+    "TSTypeLiteral:not(TSTypeAliasDeclaration > TSUnionType > TSTypeLiteral)",
   message: "인라인 객체 타입 대신 interface로 선언함",
 };
 
-// undefined를 돌려줄 때는 `return undefined;` 대신 `return;`으로 끝냄 (BLOG-31, 2026-11-06 사용자 결정)
+// undefined를 돌려줄 때는 `return undefined;`나 `return void 0;` 대신 `return;`으로 끝냄 (BLOG-31, 2026-11-06 사용자 결정)
 // eslint-plugin-unicorn의 no-useless-undefined는 반환 타입을 적은 함수를 건너뛰므로 쓰지 않음
-const returnRule = {
-  selector: "ReturnStatement > Identifier.argument[name='undefined']",
-  message: "undefined를 돌려줄 때는 return;으로 끝냄",
-};
+const returnRules = [
+  {
+    selector: "ReturnStatement > Identifier.argument[name='undefined']",
+    message: "undefined를 돌려줄 때는 return;으로 끝냄",
+  },
+  {
+    selector:
+      "ReturnStatement > UnaryExpression.argument[operator='void'][argument.type='Literal']",
+    message: "undefined를 돌려줄 때는 return;으로 끝냄",
+  },
+];
+
+// TypeScript 전용. 대문자 이름의 배열·객체 상수는 `as const`를 붙임(`as const satisfies T` 포함) (BLOG-31, 2026-11-06 사용자 결정)
+const constantName = "[id.name=/^[A-Z][A-Z0-9_]*$/]";
+const literalInit = "/^(ArrayExpression|ObjectExpression)$/";
+const asConstMessage = "대문자 이름의 배열·객체 상수에는 as const를 붙임";
+const asConstRules = [
+  `VariableDeclarator${constantName}[init.type=${literalInit}]`,
+  `VariableDeclarator${constantName}[init.type='TSSatisfiesExpression'][init.expression.type=${literalInit}]`,
+  `VariableDeclarator${constantName}[init.type='TSAsExpression'][init.expression.type=${literalInit}]:not([init.typeAnnotation.typeName.name='const'])`,
+].map((selector) => ({ selector, message: asConstMessage }));
 
 // 같은 규칙을 뒤에서 다시 정하면 앞의 선택자를 덮으므로 공통 선택자를 한곳에 모음
 const commonSyntax = [
   ...blockBodies,
   ...conditionRules,
   inlineTypeRule,
-  returnRule,
+  ...returnRules,
 ];
+const typeScriptSyntax = [...commonSyntax, ...asConstRules];
 
 export default defineConfig(
   js.configs.recommended,
@@ -110,6 +130,7 @@ export default defineConfig(
     // export 함수는 반환 타입을 적음 (BLOG-31, 2026-11-06 사용자 결정)
     files: ["**/*.ts"],
     rules: {
+      "no-restricted-syntax": ["error", ...typeScriptSyntax],
       "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
       "@typescript-eslint/explicit-module-boundary-types": "error",
     },
@@ -133,7 +154,7 @@ export default defineConfig(
       // 같은 규칙을 뒤에서 다시 정하면 앞의 선택자를 덮으므로 공통 선택자를 함께 넣음
       "no-restricted-syntax": [
         "error",
-        ...commonSyntax,
+        ...typeScriptSyntax,
         {
           selector:
             "CallExpression[callee.object.name='Date'][callee.property.name='now']",

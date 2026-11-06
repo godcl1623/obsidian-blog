@@ -8,10 +8,10 @@ const note = (frontmatter: string, body = "본문\n") =>
   `---\n${frontmatter}\n---\n${body}`;
 
 const PATH = "공개 글/노트.md";
-const APPROVED = [PATH];
+const APPROVED = [PATH] as const;
 
-const PUBLIC: Decision = { kind: "public" };
-const PRIVATE: Decision = { kind: "private" };
+const PUBLIC = { kind: "public" } as const satisfies Decision;
+const PRIVATE = { kind: "private" } as const satisfies Decision;
 const held = (reason: HoldReason, line?: number): Decision => {
   const noLine = line === undefined;
   return noLine ? { kind: "held", reason } : { kind: "held", reason, line };

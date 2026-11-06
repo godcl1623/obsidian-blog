@@ -9,8 +9,8 @@ export const HOLD_REASON = {
   URL_CONFLICT: "URL 충돌",
 } as const;
 
-export const PUBLIC: Decision = { kind: "public" };
-export const PRIVATE: Decision = { kind: "private" };
+export const PUBLIC = { kind: "public" } as const satisfies Decision;
+export const PRIVATE = { kind: "private" } as const satisfies Decision;
 
 // 확장자 .md는 대소문자를 구분하지 않음 (BLOG-30 가정 8)
 export const NOTE_EXTENSION = /\.md$/i;
