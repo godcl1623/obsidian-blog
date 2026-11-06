@@ -284,6 +284,56 @@ describe("인용, 목록, 콜아웃 안", () => {
       expected: { body: "> <details>\n> 내용\n> </details>\n" },
     },
     {
+      name: "CRLF 인용 안의 여러 줄 허용 태그",
+      basis: "4-2 2절, 가정 8",
+      content:
+        '---\r\npublish: true\r\n---\r\n> a <mark\r\n> title="숨김">b</mark>\r\n',
+      expected: { body: "> a <mark>b</mark>\r\n" },
+    },
+    {
+      name: "CRLF 인용 안 HTML 블록에서 태그를 닫는 >가 다음 줄에 옴",
+      basis: "4-2 2절, 가정 8",
+      content:
+        '---\r\npublish: true\r\n---\r\n> <details title="숨김"\r\n> >\r\n> 내용\r\n> </details>\r\n',
+      expected: { body: "> <details>\r\n> 내용\r\n> </details>\r\n" },
+    },
+    {
+      name: "> 뒤에 공백이 없는 인용의 여러 줄 허용 태그",
+      basis: "4-2 2절, 가정 8",
+      content: note('>a <mark\n>title="숨김">b</mark>\n'),
+      expected: { body: ">a <mark>b</mark>\n" },
+    },
+    {
+      name: "> 없이 이어진 인용 줄의 여러 줄 허용 태그",
+      basis: "4-2 2절, 가정 8",
+      content: note('> a <mark\ntitle="숨김">b</mark>\n'),
+      expected: { body: "> a <mark>b</mark>\n" },
+    },
+    {
+      name: "번호 목록 안의 여러 줄 허용 태그",
+      basis: "4-2 2절, 가정 8",
+      content: note('1. a <mark\n   title="숨김">b</mark>\n'),
+      expected: { body: "1. a <mark>b</mark>\n" },
+    },
+    {
+      name: "콜아웃 안의 여러 줄 허용 태그",
+      basis: "4-2 2절, 가정 8",
+      content: note('> [!note]\n> a <mark\n> title="숨김">b</mark>\n'),
+      expected: { body: "> [!note]\n> a <mark>b</mark>\n" },
+    },
+    {
+      name: "인용 표시 뒤 공백과 탭이 있어도 줄 끝이 맞으면 예외 없음",
+      basis: "4-2 2절, 가정 8",
+      content: note('> \t<mark title="숨김">b</mark>\n'),
+      expected: { body: "> \t<mark>b</mark>\n" },
+    },
+    {
+      name: "목록 표시 뒤 탭이 있어도 줄 끝이 맞으면 예외 없음",
+      basis: "4-2 2절, 가정 8",
+      content: note('-\t<details title="숨김">\n'),
+      expected: { body: "-\t<details>\n" },
+    },
+    {
       name: "인용 밖 HTML 블록에서는 줄바꿈 뒤의 >가 태그 끝",
       basis: "4-2 2절",
       content: note("<details\n>\n내용\n</details>\n"),
