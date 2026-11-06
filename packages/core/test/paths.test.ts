@@ -10,12 +10,12 @@ const BROKEN_CHAR = "\uD800";
 
 const { NOT_NFC, UNENCODABLE, URL_CONFLICT } = HOLD_REASON;
 
-type Row = {
+interface Row {
   name: string;
   basis: string;
   paths: string[];
   expected: Record<string, HoldReason>;
-};
+}
 
 // 기대 출력은 보류할 경로와 사유. 없는 경로는 보류하지 않음
 const table = (

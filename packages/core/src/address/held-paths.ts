@@ -19,7 +19,8 @@ const checkPaths = (
     if (!address) addressable.push(path);
   }
   for (const path of findConflicts(addressable)) {
-    if (!held.has(path)) held.set(path, HOLD_REASON.URL_CONFLICT);
+    const alreadyHeld = held.has(path);
+    if (!alreadyHeld) held.set(path, HOLD_REASON.URL_CONFLICT);
   }
   return held;
 };

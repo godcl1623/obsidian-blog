@@ -12,20 +12,20 @@ const APPROVED = [PATH];
 
 const PUBLIC: Decision = { kind: "public" };
 const PRIVATE: Decision = { kind: "private" };
-const held = (reason: HoldReason, line?: number): Decision =>
-  line === undefined
-    ? { kind: "held", reason }
-    : { kind: "held", reason, line };
+const held = (reason: HoldReason, line?: number): Decision => {
+  const noLine = line === undefined;
+  return noLine ? { kind: "held", reason } : { kind: "held", reason, line };
+};
 const { BROKEN, UNAPPROVED } = HOLD_REASON;
 
-type Row = {
+interface Row {
   name: string;
   basis: string;
   path?: string;
   content: string;
   approvals?: readonly string[];
   expected: Decision;
-};
+}
 
 const table = (rows: Row[]) =>
   it.each(rows)(

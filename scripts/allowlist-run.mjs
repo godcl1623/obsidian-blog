@@ -5,7 +5,8 @@
 import { spawnSync } from "node:child_process";
 
 const [list, separator, command, ...args] = process.argv.slice(2);
-if (separator !== "--" || !command) {
+const misused = separator !== "--" || !command;
+if (misused) {
   console.error(
     "사용: node scripts/allowlist-run.mjs <키,키,...> -- <명령> [인자...]",
   );
@@ -25,7 +26,8 @@ const blocked = lines.filter((line) => {
 });
 const errors = nonEmpty(stderr).length;
 
-if (blocked.length > 0 || errors > 0 || status !== 0) {
+const rejected = blocked.length > 0 || errors > 0 || status !== 0;
+if (rejected) {
   console.error(
     `막음: 허용 밖 표준 출력 ${blocked.length}줄, 표준 오류 ${errors}줄, 종료 코드 ${status}`,
   );

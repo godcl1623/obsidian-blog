@@ -10,12 +10,12 @@ const note = (body: string, frontmatter = "publish: true") =>
 
 const { UNCLOSED_COMMENT, UNCLOSED_HTML_COMMENT } = WARNING;
 
-type Row = {
+interface Row {
   name: string;
   basis: string;
   content: string;
   expected: Partial<Stripped>;
-};
+}
 
 // 본문만 보는 행은 expected에 body만 적음. 경고가 없으면 warnings는 빈 배열
 const table = (rows: Row[]) =>

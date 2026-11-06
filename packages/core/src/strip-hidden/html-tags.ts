@@ -10,12 +10,10 @@ const ALLOWED_TAG =
 const valueToSource = (body: string, { start, end, value }: Span) => {
   const source = body.slice(start, end).split("\n");
   const lines = value.split("\n");
-  if (
-    source.length !== lines.length ||
-    source.some((line, index) => !line.endsWith(lines[index]))
-  ) {
-    throw new Error("HTML 위치를 원문과 맞출 수 없음");
-  }
+  const sameLineCount = source.length === lines.length;
+  const aligned =
+    sameLineCount && source.every((line, index) => line.endsWith(lines[index]));
+  if (!aligned) throw new Error("HTML 위치를 원문과 맞출 수 없음");
   const lineStarts: number[] = [];
   let at = start;
   source.forEach((line, index) => {
@@ -33,18 +31,22 @@ const valueToSource = (body: string, { start, end, value }: Span) => {
 export const findTagEdits = (body: string): Edit[] => {
   const edits: Edit[] = [];
   for (const span of findSpans(body)) {
-    if (span.type !== "html") continue;
+    const isHtml = span.type === "html";
+    if (!isHtml) continue;
     const { value } = span;
     const toSource = valueToSource(body, span);
+    // 찾는 위치가 매번 뒤로 가므로 반복이 끝남
     let start = value.indexOf("<");
-    while (start !== -1) {
+    while (true) {
+      const notFound = start === -1;
+      if (notFound) break;
       const tag = ALLOWED_TAG.exec(value.slice(start));
       const end = start + (tag ? tag[0].length : 1);
       const text = tag ? `<${tag[1]}${tag[2].toLowerCase()}>` : "&lt;";
       const from = toSource(start);
       const to = toSource(end - 1) + 1;
-      if (body.slice(from, to) !== text)
-        edits.push({ start: from, end: to, text });
+      const changed = body.slice(from, to) !== text;
+      if (changed) edits.push({ start: from, end: to, text });
       start = value.indexOf("<", end);
     }
   }
