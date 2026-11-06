@@ -62,7 +62,7 @@ const inlineTypeRule = {
   message: "인라인 객체 타입 대신 interface로 선언함",
 };
 
-// undefined를 돌려줄 때는 `return undefined;`나 `return void 0;` 대신 `return;`으로 끝냄 (BLOG-31, 2026-11-06 사용자 결정)
+// undefined를 돌려줄 때는 `return undefined;`나 `return void <식>;` 대신 `return;`으로 끝냄. `return void g();`는 `g(); return;`으로 씀 (BLOG-31, 2026-11-06 사용자 결정)
 // eslint-plugin-unicorn의 no-useless-undefined는 반환 타입을 적은 함수를 건너뛰므로 쓰지 않음
 const returnRules = [
   {
@@ -70,13 +70,12 @@ const returnRules = [
     message: "undefined를 돌려줄 때는 return;으로 끝냄",
   },
   {
-    selector:
-      "ReturnStatement > UnaryExpression.argument[operator='void'][argument.type='Literal']",
+    selector: "ReturnStatement > UnaryExpression.argument[operator='void']",
     message: "undefined를 돌려줄 때는 return;으로 끝냄",
   },
 ];
 
-// TypeScript 전용. 대문자 이름의 배열·객체 상수는 `as const`를 붙임(`as const satisfies T` 포함) (BLOG-31, 2026-11-06 사용자 결정)
+// TypeScript 파일과 core(지금 TypeScript 파일만 있음)에 적용함. 대문자 이름의 배열·객체 상수는 `as const`를 붙임(`as const satisfies T` 포함) (BLOG-31, 2026-11-06 사용자 결정)
 const constantName = "[id.name=/^[A-Z][A-Z0-9_]*$/]";
 const literalInit = "/^(ArrayExpression|ObjectExpression)$/";
 const asConstMessage = "대문자 이름의 배열·객체 상수에는 as const를 붙임";
