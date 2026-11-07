@@ -6,5 +6,7 @@
     "in_review": "검토 중",
     "done": "완료"
   },
-  "verify": "fnm exec --using=26 -- pnpm verify"
+  "verify": "fnm exec --using=26 -- pnpm verify",
+  "docs_dir": ".claude/docs",
+  "conventions": ["typescript"]
 }

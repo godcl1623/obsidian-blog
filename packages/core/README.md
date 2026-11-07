@@ -11,7 +11,7 @@
 | `src/strip-hidden/`     | 공개 노트에서 화면에 보이지 않지만 출력에 남으면 유출되는 내용(주석, HTML, frontmatter)을 지움       | `stripHidden` (`strip-hidden.ts`)                                                       |
 | `src/links/`            | 위키링크와 표준 마크다운 링크를 최종 URL의 링크로 바꾸고, 링크가 되지 않는 대상은 표시 텍스트만 남김 | `convertLinks` (`convert-links.ts`), `headingSlug` (`anchor.ts`, 진입점에서 내보냄)     |
 
-- 다른 파일에서 가져다 쓰는 타입과 상수는 `src/types.ts`, `src/constants.ts`에 둠 (conventions.md 1절)
+- 다른 파일에서 가져다 쓰는 타입과 상수는 `src/types.ts`, `src/constants.ts`에 둠 (`.claude/docs/conventions.md` 1절)
 
 ## 부르는 순서
 
