@@ -19,7 +19,12 @@ export const NOTE_EXTENSION = /\.md$/i;
 export const WARNING = {
   UNCLOSED_COMMENT: "닫히지 않은 %% 주석을 노트 끝까지 지움",
   UNCLOSED_HTML_COMMENT: "닫히지 않은 HTML 주석을 지움",
+  BLOCK_REFERENCE: "블록 참조를 노트 링크로 바꿈",
+  NOTE_EMBED: "노트 임베드를 링크로 바꿈",
 } as const;
 
 // 원문 범위를 모으는 마크다운 노드 종류: 코드(펜스, 들여쓰기, 인라인)와 HTML
 export const SPAN_TYPES = ["code", "inlineCode", "html"] as const;
+
+// 그대로 두는 외부 주소. 나머지 스킴과 경로 목록에 없는 주소는 표시 텍스트만 남김 (blog-plan.md 4-2 1절, 2절, BLOG-32 가정 3)
+export const EXTERNAL_URL = /^(?:https?:\/\/|mailto:)/i;

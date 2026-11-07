@@ -29,7 +29,7 @@ export const cleanBody = (original: string): CleanedBody => {
     // 뒤의 편집부터 적용해 앞 편집의 위치가 그대로 맞게 함
     const tags = findTagEdits(body);
     const settled = tags.length === 0;
-    if (settled) return { body, warnings };
+    if (settled) return { body, warnings, history };
     tags.reverse().forEach(apply);
   }
 };
