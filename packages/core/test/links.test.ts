@@ -391,6 +391,11 @@ describe("HTML 블록 안에 읽지 못한 링크가 남으면 노트를 보류�
     ["안쪽 글자에 줄바꿈", "[글\n자](secret/plan.md)"],
     ["참조 정의", "[r]: secret/plan.md"],
     ["이스케이프한 여는 대괄호", "\\[글](secret/plan.md)"],
+    ["이름에 이스케이프한 ]가 든 참조 정의", "[a\\]b]: secret/plan.md"],
+    ["이름에 줄바꿈이 든 참조 정의", "[a\nb]: secret/plan.md"],
+    ["들여쓴 참조 정의(공백 3칸)", "   [r]: secret/plan.md"],
+    ["탭 뒤의 참조 정의", "\t[r]: secret/plan.md"],
+    ["글 가운데의 ]:", "[주의]: 글"],
   ])("%s", (_name, inner) => {
     const body = `<details>\n${inner}\n</details>\n`;
     expect(() => convert(body)).toThrow("읽지 못한 링크가 HTML 안에 남음");
@@ -600,6 +605,19 @@ describe("나가는 링크 목록 (BLOG-32 가정 1)", () => {
     expect(allTargets).toEqual(["secret/plan.md", "dev/note.md"]);
     expect(publicTargets).toEqual([]);
   });
+
+  it.each([
+    ["공백", "[글]( secret/plan.md)"],
+    ["탭", "[글](\tsecret/plan.md)"],
+    ["공백 뒤 <>", "[글]( <secret/plan.md>)"],
+  ])(
+    "HTML 블록 안 주소 앞의 %s는 건너뛰고 모든 대상 칸에 넣음 (BLOG-32 가정 11, 15)",
+    (_name, inner) => {
+      const result = convert(`<details>\n${inner}\n</details>\n`);
+      expect(result.body).toBe("<details>\n글\n</details>\n");
+      expect(result.allTargets).toEqual(["secret/plan.md"]);
+    },
+  );
 });
 
 describe("비공개 대상의 흔적이 가공 결과에 남지 않음", () => {
