@@ -357,6 +357,17 @@ describe("노트 임베드는 일반 링크로 바꾸고 경고함", () => {
         { message: NOTE_EMBED, line: 1 },
       ],
     },
+    {
+      name: "첨부 목록 밖 확장자는 노트 임베드로 봄(BLOG-33이 정함)",
+      basis: "2절, 4-2 1절, BLOG-32 가정 14",
+      body: "![[secret/a.tiff]] ![[secret/x.canvas]] ![[secret/y.base]]\n",
+      expected: "a\\.tiff x\\.canvas y\\.base\n",
+      warnings: [
+        { message: NOTE_EMBED, line: 1 },
+        { message: NOTE_EMBED, line: 1 },
+        { message: NOTE_EMBED, line: 1 },
+      ],
+    },
   ]);
 });
 
