@@ -386,7 +386,13 @@ describe("읽지 못한 위키링크가 남으면 노트를 보류함 (2절, BLO
 describe("HTML 블록 안에 읽지 못한 링크가 남으면 노트를 보류함 (2절, BLOG-32 가정 13)", () => {
   it.each([
     ["주소에 괄호", "[글](secret/a(1).md)"],
-    ["제목에 괄호", '[글](secret/plan.md "초안(1)")'],
+    ["괄호로 감싼 제목", "[글](secret/plan.md (초안))"],
+    ["주소 앞의 줄바꿈 없는 공백", "[글](\u00a0secret/plan.md)"],
+    ["주소 앞의 전각 공백", "[글](\u3000secret/plan.md)"],
+    ["주소 앞의 \\f", "[글](\fsecret/plan.md)"],
+    ["주소 앞의 \\v", "[글](\vsecret/plan.md)"],
+    ["주소 앞의 줄바꿈", "[글](\nsecret/plan.md)"],
+    ["따옴표 없는 제목", "[글](secret/plan.md 초안)"],
     ["안쪽 글자에 대괄호", "[a [b] c](secret/plan.md)"],
     ["안쪽 글자에 줄바꿈", "[글\n자](secret/plan.md)"],
     ["참조 정의", "[r]: secret/plan.md"],
@@ -395,7 +401,9 @@ describe("HTML 블록 안에 읽지 못한 링크가 남으면 노트를 보류�
     ["이름에 줄바꿈이 든 참조 정의", "[a\nb]: secret/plan.md"],
     ["들여쓴 참조 정의(공백 3칸)", "   [r]: secret/plan.md"],
     ["탭 뒤의 참조 정의", "\t[r]: secret/plan.md"],
-    ["글 가운데의 ]:", "[주의]: 글"],
+    ["줄 머리의 평범한 [주의]:", "[주의]: 글"],
+    ["줄 가운데의 참조 정의 모양", "<p>[r]: secret/plan.md</p>"],
+    ["줄 가운데의 평범한 [주의]:", "글 [주의]: 글"],
   ])("%s", (_name, inner) => {
     const body = `<details>\n${inner}\n</details>\n`;
     expect(() => convert(body)).toThrow("읽지 못한 링크가 HTML 안에 남음");
@@ -610,8 +618,10 @@ describe("나가는 링크 목록 (BLOG-32 가정 1)", () => {
     ["공백", "[글]( secret/plan.md)"],
     ["탭", "[글](\tsecret/plan.md)"],
     ["공백 뒤 <>", "[글]( <secret/plan.md>)"],
+    ["따옴표 제목 안의 괄호", '[글](secret/plan.md "초안(1)")'],
+    ["작은따옴표 제목과 뒤 공백", "[글](secret/plan.md '초안' )"],
   ])(
-    "HTML 블록 안 주소 앞의 %s는 건너뛰고 모든 대상 칸에 넣음 (BLOG-32 가정 11, 15)",
+    "HTML 블록 안 허용 모양(%s)은 읽어 모든 대상 칸에 넣음 (BLOG-32 가정 11, 15, 16)",
     (_name, inner) => {
       const result = convert(`<details>\n${inner}\n</details>\n`);
       expect(result.body).toBe("<details>\n글\n</details>\n");
