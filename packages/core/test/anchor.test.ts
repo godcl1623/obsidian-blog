@@ -35,13 +35,14 @@ describe("제목 앵커는 github-slugger로 만들고 core 진입점에서 내�
       heading: "1. 무엇? (요약)",
       expected: "1-무엇-요약",
     },
-    {
-      name: "같은 제목을 두 번 넣어도 번호를 붙이지 않음",
-      basis: "BLOG-32 가정 8",
-      heading: "설치",
-      expected: "설치",
-    },
   ])("$name ($basis)", ({ heading, expected }) => {
     expect(headingSlug(heading)).toBe(expected);
+  });
+
+  it("같은 제목을 두 번 넣어도 번호를 붙이지 않음 (BLOG-32 가정 8)", () => {
+    expect([headingSlug("설치"), headingSlug("설치")]).toEqual([
+      "설치",
+      "설치",
+    ]);
   });
 });

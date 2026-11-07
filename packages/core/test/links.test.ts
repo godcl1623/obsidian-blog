@@ -6,8 +6,16 @@ import { stripHidden } from "../src/strip-hidden/strip-hidden";
 import type { Converted, Warning } from "../src/types";
 
 // 가짜 노트만 씀. 실제 볼트는 열지 않음 (blog-plan.md 4-2 6절)
-// 공개 노트는 아래 셋뿐임. secret/plan.md는 비공개, dev/missing.md는 볼트에 없는 노트로 씀
-const PUBLIC = new Set(["dev/note.md", "dev/Public Note.md", "README.md"]);
+// 공개 노트는 아래 넷뿐임(경로는 NFC). secret/plan.md는 비공개, dev/missing.md는 볼트에 없는 노트로 씀
+const PUBLIC = new Set([
+  "dev/note.md",
+  "dev/Public Note.md",
+  "dev/한글.md",
+  "README.md",
+]);
+
+// NFD로 쓴 "한글". 경로 목록(NFC)과 글자가 달라 링크가 되지 않음 (3절)
+const NFD = "한글".normalize("NFD");
 
 const { BLOCK_REFERENCE, NOTE_EMBED } = WARNING;
 
@@ -161,6 +169,44 @@ describe("링크가 되지 않는 대상은 표시 텍스트만 남김", () => {
       expected: "note\n",
     },
     {
+      name: "확장자 대소문자가 다르면 경로 목록에 없음",
+      basis: "3절, 4-1 (0), BLOG-32 가정 8",
+      body: "[[dev/note.MD]]\n",
+      expected: "note\n",
+    },
+    {
+      name: "NFC로 쓴 경로는 링크",
+      basis: "3절, 4-2 1절",
+      body: "[[dev/한글]]\n",
+      expected: `[한글](</notes/dev/${encodeURIComponent("한글")}>)\n`,
+    },
+    {
+      name: "NFD로 쓴 경로는 경로 목록에 없음",
+      basis: "3절, 4-1 (0), BLOG-32 가정 8",
+      body: `[[dev/${NFD}]]\n`,
+      expected: `${NFD}\n`,
+    },
+    {
+      name: "같은 노트의 블록은 별칭만",
+      basis: "4-2 1절",
+      body: "[[#^abc|여기]]\n",
+      expected: "여기\n",
+      warnings: [{ message: BLOCK_REFERENCE, line: 1 }],
+    },
+    {
+      name: "같은 노트의 블록에 별칭이 없으면 빈 글자",
+      basis: "4-2 1절",
+      body: "[[#^abc123]]\n",
+      expected: "\n",
+      warnings: [{ message: BLOCK_REFERENCE, line: 1 }],
+    },
+    {
+      name: "빈 대상은 별칭만",
+      basis: "4-2 1절",
+      body: "[[|별칭]]\n",
+      expected: "별칭\n",
+    },
+    {
       name: "비공개 대상 표시 텍스트의 기호도 이스케이프",
       basis: "BLOG-32 가정 6",
       body: "[[secret/plan|*중요*]]\n",
@@ -241,6 +287,24 @@ describe("블록 참조는 노트 링크로 낮추고 경고함", () => {
       expected: "- 항목\n\n\n",
     },
     kept("줄 가운데의 ^는 표식이 아님", "4-2 1절", "2^10 ^abc 뒤\n"),
+    {
+      name: "CRLF 줄의 표식",
+      basis: "4-2 1절",
+      body: "문단 ^abc\r\n",
+      expected: "문단\r\n",
+    },
+    {
+      name: "탭 뒤의 표식과 끝 공백",
+      basis: "4-2 1절",
+      body: "문단\t^abc  \n",
+      expected: "문단\n",
+    },
+    {
+      name: "공백 뒤 줄 끝의 ^영숫자는 표식으로 봄",
+      basis: "4-2 1절, BLOG-32 가정 12",
+      body: "a ^2\n",
+      expected: "a\n",
+    },
     {
       name: "경고 줄 번호는 주석을 지우기 전 원본 기준",
       basis: "4-2 4절, BLOG-32 가정 2",
@@ -365,6 +429,18 @@ describe("표준 마크다운 링크에도 같은 규칙", () => {
       expected: "글\n",
     },
     {
+      name: "NFD를 인코딩한 경로는 경로 목록에 없음",
+      basis: "3절, BLOG-32 가정 8",
+      body: `[글](dev/${encodeURIComponent(NFD)}.md)\n`,
+      expected: "글\n",
+    },
+    {
+      name: "빈 주소와 # 하나는 안쪽 글자만",
+      basis: "4-2 1절",
+      body: "[글]() [글](#)\n",
+      expected: "글 글\n",
+    },
+    {
       name: "링크 안쪽 글자의 위키링크도 바꿈",
       basis: "4-2 1절",
       body: "[보기 [[secret/plan]]](https://example.com)\n",
@@ -411,6 +487,17 @@ describe("외부 주소와 로컬 링크", () => {
       basis: "BLOG-32 가정 3",
       body: "[a](javascript:alert(1)) [b](tel:123)\n",
       expected: "a b\n",
+    },
+    kept(
+      "스킴 대소문자를 구분하지 않고 외부 주소는 그대로",
+      "BLOG-32 가정 3",
+      "[a](HTTPS://example.com) [b](MAILTO:a@b.c)\n",
+    ),
+    {
+      name: "대문자 스킴, 드라이브 경로, //주소, data:는 표시 텍스트만",
+      basis: "4-2 2절, BLOG-32 가정 3",
+      body: "[a](Obsidian://open) [b](C:/Users/me/x.md) [c](//host/x) [d](data:text/html,x)\n",
+      expected: "a b c d\n",
     },
     {
       name: "막는 스킴의 자동 링크는 통째로 지움",
@@ -524,12 +611,25 @@ describe("비공개 대상의 흔적이 가공 결과에 남지 않음", () => {
 
 // 편집이 겹치면 어느 쪽이 맞는지 알 수 없으므로 예외로 그 노트를 보류하게 함 (4-2 4절)
 describe("편집 적용", () => {
+  // 앞 편집이 길이를 바꾸므로 앞에서부터 적용하면 뒤 편집의 위치가 어긋나 "AAbc"가 됨
   it("겹치지 않는 편집은 뒤에서부터 적용함 (4-2 4절)", () => {
     const edits = [
-      { start: 0, end: 1, text: "A" },
-      { start: 2, end: 3, text: "C" },
+      { start: 0, end: 1, text: "AAA" },
+      { start: 2, end: 3, text: "" },
     ];
-    expect(applyEdits("abc", edits)).toBe("AbC");
+    expect(applyEdits("abc", edits)).toBe("AAAb");
+  });
+
+  it("맞닿은 편집은 겹침이 아님 (4-2 4절)", () => {
+    const edits = [
+      { start: 0, end: 1, text: "X" },
+      { start: 1, end: 2, text: "Y" },
+    ];
+    expect(applyEdits("abc", edits)).toBe("XYc");
+  });
+
+  it("정의 주소의 위키링크는 정의 제거와 겹쳐 예외 (4-2 4절)", () => {
+    expect(() => convert("[r]: [[secret/plan]]\n")).toThrow("링크 편집이 겹침");
   });
 
   it("겹치는 편집은 예외 (4-2 4절)", () => {
