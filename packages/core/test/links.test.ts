@@ -372,6 +372,20 @@ describe("읽지 못한 위키링크가 남으면 노트를 보류함 (2절, BLO
   table([kept("코드 안의 [[는 그대로", "4-2 1절", "`[[a [b]]]`\n")]);
 });
 
+describe("HTML 블록 안에 읽지 못한 링크가 남으면 노트를 보류함 (2절, BLOG-32 가정 13)", () => {
+  it.each([
+    ["주소에 괄호", "[글](secret/a(1).md)"],
+    ["제목에 괄호", '[글](secret/plan.md "초안(1)")'],
+    ["안쪽 글자에 대괄호", "[a [b] c](secret/plan.md)"],
+    ["안쪽 글자에 줄바꿈", "[글\n자](secret/plan.md)"],
+    ["참조 정의", "[r]: secret/plan.md"],
+    ["이스케이프한 여는 대괄호", "\\[글](secret/plan.md)"],
+  ])("%s", (_name, inner) => {
+    const body = `<details>\n${inner}\n</details>\n`;
+    expect(() => convert(body)).toThrow("읽지 못한 링크가 HTML 안에 남음");
+  });
+});
+
 describe("표준 마크다운 링크에도 같은 규칙", () => {
   table([
     {

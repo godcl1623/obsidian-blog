@@ -143,8 +143,19 @@ const convertReference = (
 
 // HTML 블록 안의 `[글자](주소)`는 해석기가 링크로 읽지 않음. 공개 여부와 상관없이 안쪽 글자만 남기고, 내부 대상은 모든 대상 칸에 넣음 (2절, BLOG-32 가정 11)
 // 이미지(`![`)는 BLOG-33이 다룸. 위키링크와 겹치면 위키링크가 처리함. `<주소>`의 <는 stripHidden이 &lt;로 바꿔 둠
+// 이스케이프한 `\[`는 링크가 아님
 const HTML_LINK =
-  /(?<!!)\[([^[\]\n]*)\]\((?:(?:<|&lt;)([^<>\n]*)>|([^\s()]*))[^()\n]*\)/g;
+  /(?<![!\\])\[([^[\]\n]*)\]\((?:(?:<|&lt;)([^<>\n]*)>|([^\s()]*))[^()\n]*\)/g;
+const HTML_IMAGE = /!\[[^[\]\n]*\]\([^()\n]*\)/g;
+
+// 바꾸고 남은 `](`나 줄 머리의 `[이름]:`는 정규식이 읽지 못한 링크나 참조 정의이며 원문 주소가 나갈 수 있음. 예외로 그 노트를 보류하게 함 (2절, BLOG-32 가정 13)
+const HTML_LEFTOVER = /\]\(|^[ \t]*\[[^\]\n]*\]:/m;
+
+const assertNoHtmlLeftovers = (source: string) => {
+  const rest = source.replace(HTML_LINK, "").replace(HTML_IMAGE, "");
+  const leftover = HTML_LEFTOVER.test(rest);
+  if (leftover) throw new Error("읽지 못한 링크가 HTML 안에 남음");
+};
 
 const convertHtmlLinks = (
   context: LinkContext,
@@ -153,6 +164,7 @@ const convertHtmlLinks = (
 ) => {
   for (const html of context.syntax.html) {
     const source = context.body.slice(html.start, html.end);
+    assertNoHtmlLeftovers(source);
     for (const match of source.matchAll(HTML_LINK)) {
       const [whole, text, angled, plain] = match;
       const start = html.start + match.index;
