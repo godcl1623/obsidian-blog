@@ -1,5 +1,6 @@
 import { cleanBody } from "./clean-body";
 import { readProperties, splitNote } from "./properties";
+import { toOriginal } from "./text-edits";
 import type { Stripped } from "../types";
 
 // 화면에 보이지 않지만 출력에 남으면 유출되는 내용(주석, HTML, frontmatter 필드)을 지움 (blog-plan.md 4-2 2절)
@@ -7,6 +8,10 @@ import type { Stripped } from "../types";
 export const stripHidden = (content: string): Stripped => {
   const { frontmatter, body, lineOffset } = splitNote(content);
   const cleaned = cleanBody(body);
+  const lineAt = (offset: number) => {
+    const original = toOriginal(offset, cleaned.history);
+    return body.slice(0, original).split("\n").length + lineOffset;
+  };
   return {
     body: cleaned.body,
     ...readProperties(frontmatter),
@@ -14,5 +19,6 @@ export const stripHidden = (content: string): Stripped => {
       message,
       line: line + lineOffset,
     })),
+    lineAt,
   };
 };

@@ -17,10 +17,14 @@ interface Row {
   expected: Partial<Stripped>;
 }
 
-// 본문만 보는 행은 expected에 body만 적음. 경고가 없으면 warnings는 빈 배열
+// 본문만 보는 행은 expected에 body만 적음. 경고가 없으면 warnings는 빈 배열. lineAt은 아래 "줄 번호" 표에서 봄
 const table = (rows: Row[]) =>
   it.each(rows)("$name ($basis)", ({ content, expected }) => {
-    expect(stripHidden(content)).toEqual({ warnings: [], ...expected });
+    expect(stripHidden(content)).toEqual({
+      warnings: [],
+      lineAt: expect.any(Function),
+      ...expected,
+    });
   });
 
 // 같은 본문이 그대로 나와야 하는 행
@@ -592,5 +596,34 @@ describe("지운 내용은 결과 어디에도 남지 않음", () => {
     const result = stripHidden(content);
     expect(JSON.stringify(result)).not.toContain("CANARY");
     expect(result.warnings.length).toBeGreaterThan(0);
+  });
+});
+
+// 가정 2(BLOG-32, 2026-11-07 사용자 결정): 뒤 단계의 경고가 원본 노트 기준 줄 번호를 쓰도록 위치를 되돌림
+describe("가공 본문의 위치를 원본 노트의 줄 번호로 바꿈", () => {
+  it.each([
+    {
+      name: "frontmatter 세 줄 뒤 첫 줄",
+      body: "표식\n",
+      expected: 4,
+    },
+    {
+      name: "여러 줄 %% 주석을 지운 뒤의 줄",
+      body: "앞\n%%\n숨김\n숨김\n%%\n표식\n",
+      expected: 9,
+    },
+    {
+      name: "여러 줄 HTML 주석을 지운 뒤의 줄",
+      body: "<!--\n숨김\n-->\n\n표식\n",
+      expected: 8,
+    },
+    {
+      name: "주석 앞의 같은 줄",
+      body: "표식 %%숨김\n숨김%%\n",
+      expected: 4,
+    },
+  ])("$name (BLOG-32 가정 2)", ({ body, expected }) => {
+    const result = stripHidden(note(body));
+    expect(result.lineAt(result.body.indexOf("표식"))).toBe(expected);
   });
 });

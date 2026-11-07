@@ -51,10 +51,11 @@ export interface NoteParts {
   lineOffset: number;
 }
 
-// 주석과 태그를 정리한 본문과 경고. 경고 줄 번호는 나누기 전 본문 기준임
+// 주석과 태그를 정리한 본문과 경고. 경고 줄 번호는 나누기 전 본문 기준임. history는 적용한 편집을 순서대로 담음
 export interface CleanedBody {
   body: string;
   warnings: Warning[];
+  history: Edit[];
 }
 
 // frontmatter에서 내보내는 값
@@ -64,7 +65,9 @@ export interface Properties {
 }
 
 // 숨은 유출 경로를 지운 결과: frontmatter를 뺀 본문과 frontmatter에서 내보내는 값 (blog-plan.md 4-2 2절, 3절)
+// lineAt은 body의 위치를 원본 노트의 줄 번호로 바꿈. 뒤 단계의 경고도 원본 기준 줄 번호를 쓰게 하기 위함 (BLOG-32 가정 2)
 export interface Stripped extends Properties {
   body: string;
   warnings: Warning[];
+  lineAt: (offset: number) => number;
 }
