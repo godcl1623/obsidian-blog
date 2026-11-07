@@ -2,7 +2,11 @@ import { applyEdits } from "./apply-edits";
 import { findBlockMarkers } from "./block-markers";
 import { convertMarkdownLinks } from "./markdown-links";
 import { readSyntax } from "./syntax";
-import { convertWikilinks, findWikilinks } from "./wikilinks";
+import {
+  assertNoLeftovers,
+  convertWikilinks,
+  findWikilinks,
+} from "./wikilinks";
 import type { Converted, LinkedNote, Stripped } from "../types";
 
 const unique = (notes: readonly LinkedNote[]) => [
@@ -18,6 +22,7 @@ export const convertLinks = (
   const { body, lineAt } = stripped;
   const context = { body, syntax: readSyntax(body), publicPaths, lineAt };
   const wikilinks = findWikilinks(context);
+  assertNoLeftovers(context, wikilinks);
   const converted = [
     convertWikilinks(context, wikilinks),
     convertMarkdownLinks(context, wikilinks),

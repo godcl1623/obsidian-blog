@@ -18,8 +18,15 @@ import type {
 // `[[...]]`와 `![[...]]`. 안쪽에는 대괄호와 줄바꿈이 없음
 const WIKILINK = /(!?)\[\[([^[\]\n]+)\]\]/g;
 
-// 확장자가 .md가 아닌 임베드는 첨부 파일이므로 BLOG-33이 다룸
-const ATTACHMENT = /\.(?!md$)[A-Za-z0-9]+$/i;
+// 첨부 파일 임베드는 BLOG-33이 다룸. Obsidian이 임베드하는 이미지, 오디오, 동영상, PDF 확장자만 첨부로 보고 나머지(`v1.2` 등)는 노트 이름으로 봄 (4-2 1절, BLOG-32 가정 10)
+const ATTACHMENT =
+  /\.(?:avif|bmp|gif|jpe?g|png|svg|webp|flac|m4a|mp3|ogg|wav|webm|3gp|mkv|mov|mp4|ogv|pdf)$/i;
+
+const isAttachment = (wikilink: Wikilink) =>
+  wikilink.embed && ATTACHMENT.test(wikilink.target.path);
+
+const readAll = (body: string) =>
+  [...body.matchAll(WIKILINK)].map(readWikilink);
 
 interface Wikilink extends Range {
   embed: boolean;
@@ -56,11 +63,29 @@ const fitsLinks = (wikilink: Range, links: readonly MarkdownNode[]) =>
 
 // 코드 밖의 위키링크를 찾음. 첨부 파일 임베드는 BLOG-33이 다루므로 뺌 (4-2 1절)
 export const findWikilinks = ({ body, syntax }: LinkContext): Wikilink[] =>
-  [...body.matchAll(WIKILINK)].map(readWikilink).filter((wikilink) => {
+  readAll(body).filter((wikilink) => {
     const inCode = insideAny(wikilink.start, syntax.code);
-    const attachment = wikilink.embed && ATTACHMENT.test(wikilink.target.path);
-    return !inCode && !attachment && fitsLinks(wikilink, syntax.links);
+    return (
+      !inCode && !isAttachment(wikilink) && fitsLinks(wikilink, syntax.links)
+    );
   });
+
+// 바꾸지 못하고 남는 `[[`는 정규식이 읽지 못한 위키링크이며 비공개 경로가 원문 그대로 나갈 수 있음. 예외로 그 노트를 보류하게 함 (2절, BLOG-32 가정 10)
+// 코드 안과 첨부 파일 임베드는 뺌
+export const assertNoLeftovers = (
+  { body, syntax }: LinkContext,
+  wikilinks: readonly Wikilink[],
+): void => {
+  const handled = [
+    ...wikilinks,
+    ...readAll(body).filter(isAttachment),
+    ...syntax.code,
+  ];
+  const leftover = [...body.matchAll(/\[\[/g)].some(
+    ({ index }) => !insideAny(index, handled),
+  );
+  if (leftover) throw new Error("읽지 못한 위키링크가 남음");
+};
 
 // 위키링크를 표준 마크다운 링크나 표시 텍스트로 바꿈. HTML 안에서는 마크다운 링크가 동작하지 않으므로 표시 텍스트만 남김 (BLOG-32 가정 7)
 // 블록 참조와 노트 임베드는 노트 링크로 낮추고 경고함 (4-2 1절)

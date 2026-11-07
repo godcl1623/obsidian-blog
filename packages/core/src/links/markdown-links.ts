@@ -1,5 +1,5 @@
 import { EXTERNAL_URL, WARNING } from "../constants";
-import { contains, labelEnd, rangeOf } from "./syntax";
+import { contains, labelEnd, overlaps, rangeOf } from "./syntax";
 import { destination, parseTarget, resolveTarget } from "./targets";
 import type {
   Edit,
@@ -58,18 +58,18 @@ const quotedTitle = (title: string | null | undefined) => {
   return hasTitle ? ` "${title.replace(/["\\]/g, "\\$&")}"` : "";
 };
 
-// 대괄호 링크와 자동 링크(<...>)는 감싼 기호를 지워 안쪽 글자만 남김. 안쪽 원문(서식 포함)은 그대로 둠 (BLOG-32 가정 8)
+// 대괄호 링크는 감싼 기호를 지워 안쪽 글자만 남김. 안쪽 원문(서식 포함)은 그대로 둠 (BLOG-32 가정 8)
+// 자동 링크(<...>)는 안쪽이 곧 주소이므로 통째로 지움 (2절, BLOG-32 가정 9)
 // 기호 없이 쓴 주소(GFM 자동 링크)는 지울 기호가 없으므로 그대로 둠. 화면에 보이는 글자임
 const unwrap = (body: string, link: MarkdownNode): Edit[] => {
   const { start, end } = rangeOf(link);
   const angle = body[start] === "<";
   const bracket = body[start] === "[";
-  const bare = !angle && !bracket;
-  if (bare) return [];
-  const innerEnd = angle ? end - 1 : labelEnd(link);
+  if (angle) return [{ start, end, text: "" }];
+  if (!bracket) return [];
   return [
     { start, end: start + 1, text: "" },
-    { start: innerEnd, end, text: "" },
+    { start: labelEnd(link), end, text: "" },
   ];
 };
 
@@ -141,6 +141,30 @@ const convertReference = (
   return keep ? [] : unwrap(body, link);
 };
 
+// HTML 블록 안의 `[글자](주소)`는 해석기가 링크로 읽지 않음. 공개 여부와 상관없이 안쪽 글자만 남기고, 내부 대상은 모든 대상 칸에 넣음 (2절, BLOG-32 가정 11)
+// 이미지(`![`)는 BLOG-33이 다룸. 위키링크와 겹치면 위키링크가 처리함. `<주소>`의 <는 stripHidden이 &lt;로 바꿔 둠
+const HTML_LINK =
+  /(?<!!)\[([^[\]\n]*)\]\((?:(?:<|&lt;)([^<>\n]*)>|([^\s()]*))[^()\n]*\)/g;
+
+const convertHtmlLinks = (
+  context: LinkContext,
+  wikilinks: readonly Range[],
+  result: LinkEdits,
+) => {
+  for (const html of context.syntax.html) {
+    const source = context.body.slice(html.start, html.end);
+    for (const match of source.matchAll(HTML_LINK)) {
+      const [whole, text, angled, plain] = match;
+      const start = html.start + match.index;
+      const range = { start, end: start + whole.length };
+      const swallowed = wikilinks.some((wikilink) => overlaps(wikilink, range));
+      if (swallowed) continue;
+      addNote(result, judge(angled ?? plain, context.publicPaths), false);
+      result.edits.push({ ...range, text });
+    }
+  }
+};
+
 // 위키링크가 통째로 감싼 마크다운 링크는 위키링크가 대신하므로 건너뜀
 export const convertMarkdownLinks = (
   context: LinkContext,
@@ -159,5 +183,6 @@ export const convertMarkdownLinks = (
     }
     convertInline(context, link, result);
   }
+  convertHtmlLinks(context, wikilinks, result);
   return result;
 };

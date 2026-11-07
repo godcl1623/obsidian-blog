@@ -172,6 +172,17 @@ describe("링크가 되지 않는 대상은 표시 텍스트만 남김", () => {
       body: "<details>\n[[dev/note]] [[secret/plan|계획]]\n</details>\n",
       expected: "<details>\nnote 계획\n</details>\n",
     },
+    {
+      name: "HTML 블록 안의 표준 링크도 안쪽 글자만",
+      basis: "2절, BLOG-32 가정 11",
+      body: "<details>\n[글](secret/plan.md) [공개](<dev/Public Note.md>) [밖](https://example.com)\n</details>\n",
+      expected: "<details>\n글 공개 밖\n</details>\n",
+    },
+    kept(
+      "HTML 블록 안의 이미지는 BLOG-33이 다룸",
+      "4-2 1절",
+      "<details>\n![그림](img/a.png)\n</details>\n",
+    ),
   ]);
 });
 
@@ -267,7 +278,34 @@ describe("노트 임베드는 일반 링크로 바꾸고 경고함", () => {
       warnings: [{ message: NOTE_EMBED, line: 1 }],
     },
     kept("첨부 파일 임베드는 BLOG-33이 다룸", "4-2 1절", "![[img/a.png]]\n"),
+    kept(
+      "첨부 확장자는 대소문자를 구분하지 않음",
+      "4-2 1절",
+      "![[img/a.PNG|300]] ![[doc/b.pdf]]\n",
+    ),
+    {
+      name: "점이 있는 노트 이름 임베드는 노트로 봄",
+      basis: "4-2 1절, BLOG-32 가정 10",
+      body: "![[secret/v1.2]] ![[secret/plan.v2]]\n",
+      expected: "v1\\.2 plan\\.v2\n",
+      warnings: [
+        { message: NOTE_EMBED, line: 1 },
+        { message: NOTE_EMBED, line: 1 },
+      ],
+    },
   ]);
+});
+
+describe("읽지 못한 위키링크가 남으면 노트를 보류함 (2절, BLOG-32 가정 10)", () => {
+  it.each([
+    ["별칭 안의 대괄호", "[[secret/plan|별칭 [x]]]\n"],
+    ["별칭 안의 닫는 대괄호", "[[secret/plan|a]b]]\n"],
+    ["HTML 블록 안", "<details>\n[[secret/plan|a [b]]]\n</details>\n"],
+  ])("%s", (_name, body) => {
+    expect(() => convert(body)).toThrow("읽지 못한 위키링크가 남음");
+  });
+
+  table([kept("코드 안의 [[는 그대로", "4-2 1절", "`[[a [b]]]`\n")]);
 });
 
 describe("표준 마크다운 링크에도 같은 규칙", () => {
@@ -375,10 +413,10 @@ describe("외부 주소와 로컬 링크", () => {
       expected: "a b\n",
     },
     {
-      name: "막는 스킴의 자동 링크는 <>만 지움",
-      basis: "4-2 2절",
-      body: "<obsidian://open>\n",
-      expected: "obsidian://open\n",
+      name: "막는 스킴의 자동 링크는 통째로 지움",
+      basis: "4-2 2절, BLOG-32 가정 9",
+      body: "앞 <obsidian://open?vault=v&file=x> <file:///Users/me/secret.md> 뒤\n",
+      expected: "앞   뒤\n",
     },
   ]);
 });
@@ -442,6 +480,14 @@ describe("나가는 링크 목록 (BLOG-32 가정 1)", () => {
   it("공개 대상: 실제 링크로 바뀐 것만. HTML 안의 글자로 바뀐 공개 대상은 뺌 (4-2 2절)", () => {
     expect(convert(body).publicTargets).toEqual(["dev/note.md"]);
   });
+
+  it("HTML 블록 안의 표준 링크는 모든 대상 칸에만 넣음 (BLOG-32 가정 11)", () => {
+    const html =
+      "<details>\n[글](secret/plan.md) [공개](dev/note.md)\n</details>\n";
+    const { allTargets, publicTargets } = convert(html);
+    expect(allTargets).toEqual(["secret/plan.md", "dev/note.md"]);
+    expect(publicTargets).toEqual([]);
+  });
 });
 
 describe("비공개 대상의 흔적이 가공 결과에 남지 않음", () => {
@@ -452,10 +498,11 @@ describe("비공개 대상의 흔적이 가공 결과에 남지 않음", () => {
     `[[${secret}]] [[${secret}|별칭]] [[${secret}#안건]] [[${secret}#^canary-103]]`,
     `![[${secret}]] [글](${encoded}.md) [글](<${secret}.md>) [글][r]`,
     "[열기](obsidian://open?file=CANARY-104) [파일](file:///CANARY-105) [메모](/Users/CANARY-106/a.md)",
+    "<obsidian://open?vault=CANARY-108> <file:///CANARY-109/a.md>",
     "문단 ^canary-107",
     "",
     "<details>",
-    `[[${secret}]]`,
+    `[[${secret}]] [글](${encoded}.md) [글](<${secret}.md>)`,
     "</details>",
     "",
     `[r]: ${encoded}.md`,
