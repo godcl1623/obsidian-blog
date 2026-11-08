@@ -42,5 +42,8 @@ export const MEDIA_EXTENSION =
 // 원문 범위를 모으는 마크다운 노드 종류: 코드(펜스, 들여쓰기, 인라인)와 HTML
 export const SPAN_TYPES = ["code", "inlineCode", "html"] as const;
 
+// 웹 주소. 외부 링크로 그대로 두고, 외부 이미지는 이 주소의 링크로 바꿈 (blog-plan.md 4-2 1절, BLOG-33 가정 5)
+export const WEB_URL = /^https?:\/\//i;
+
 // 그대로 두는 외부 주소. 나머지 스킴과 경로 목록에 없는 주소는 표시 텍스트만 남김 (blog-plan.md 4-2 1절, 2절, BLOG-32 가정 3)
-export const EXTERNAL_URL = /^(?:https?:\/\/|mailto:)/i;
+export const EXTERNAL_URL = new RegExp(`${WEB_URL.source}|^mailto:`, "i");

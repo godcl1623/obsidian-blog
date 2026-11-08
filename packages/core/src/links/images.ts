@@ -1,4 +1,4 @@
-import { WARNING } from "../constants";
+import { WARNING, WEB_URL } from "../constants";
 import { assetUrl } from "../address/url";
 import { judgeImage } from "./image-rules";
 import { quotedTitle, readHref } from "./markdown-links";
@@ -13,9 +13,6 @@ import type {
   Range,
   Wikilink,
 } from "../types";
-
-// 외부 이미지로 보는 주소. http도 https처럼 링크로 바꿈. 나머지 스킴은 대체 텍스트만 남김 (blog-plan.md 4-2 1절, 4-3 A7, BLOG-33 가정 5)
-const EXTERNAL_IMAGE = /^https?:\/\//i;
 
 // 위키 임베드의 `|` 뒤가 숫자면 너비, `300x200`이면 너비만 씀. 0이나 다른 모양은 대체 텍스트 (4-2 1절, 4-3 A11, BLOG-33 가정 7)
 const SIZE = /^([1-9]\d*)(?:x[1-9]\d*)?$/;
@@ -145,7 +142,8 @@ const convertMarkdownImage = (
   result: ImageEdits,
 ) => {
   const { start, end, alt, url, title } = image;
-  const external = EXTERNAL_IMAGE.test(url);
+  // http도 https처럼 링크로 바꿈. 나머지 스킴은 대체 텍스트만 남김 (4-3 A7, BLOG-33 가정 5)
+  const external = WEB_URL.test(url);
   if (external) {
     convertExternal(context, image, result);
     return;
