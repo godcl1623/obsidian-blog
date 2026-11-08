@@ -361,6 +361,14 @@ describe("표준 마크다운 이미지에도 같은 규칙", () => {
       expected: "<details>\n그림 a\\.png 설명\n</details>\n",
     },
     {
+      name: "HTML 블록 안의 표준 이미지도 위키 임베드와 같은 글자와 경고",
+      basis: "2절, 4-2 1절, BLOG-33 가정 11",
+      body: "<details>\n![](img/a.png) ![](img/gps.png) ![*a*](secret/x.png) ![x](https://example.com/c.png) ![](<img/공백 있는.png>)\n</details>\n",
+      expected:
+        "<details>\na\\.png gps\\.png \\*a\\* x 공백 있는\\.png\n</details>\n",
+      warnings: [warn(GPS_IMAGE, 2)],
+    },
+    {
       name: "같은 이미지는 첨부 목록에 한 번",
       basis: "2절, 4-1 (2)",
       body: "![[img/a.png]] ![](img/a.png) ![[img/a.png|300]]\n",

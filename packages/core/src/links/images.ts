@@ -1,8 +1,8 @@
-import { WARNING, WEB_URL, WIDTH_FRAGMENT } from "../constants";
+import { HTML_IMAGE, WARNING, WEB_URL, WIDTH_FRAGMENT } from "../constants";
 import { assetUrl } from "../address/url";
 import { judgeImage } from "./image-rules";
 import { quotedTitle, readHref } from "./markdown-links";
-import { contains, insideAny, rangeOf } from "./syntax";
+import { contains, insideAny, overlaps, rangeOf } from "./syntax";
 import { destination, escapeText } from "./targets";
 import type {
   ImageEdits,
@@ -25,11 +25,12 @@ interface VaultImage extends Range {
   inHtml: boolean;
 }
 
-// 표준 마크다운 이미지 하나. 참조 이미지는 정의의 주소와 제목을 씀
+// 표준 마크다운 이미지 하나. 참조 이미지는 정의의 주소와 제목을 씀. inHtml은 HTML 블록 안에서 정규식으로 찾은 것
 interface MarkdownImage extends Range {
   alt: string;
   url: string;
   title?: string | null;
+  inHtml: boolean;
 }
 
 const fileName = (path: string) => path.split("/").at(-1)!;
@@ -94,7 +95,27 @@ const readImages = ({ images, defined }: LinkSyntax): MarkdownImage[] =>
       alt: node.alt ?? "",
       url: source?.url ?? "",
       title: source?.title,
+      inHtml: false,
     };
+  });
+
+// HTML 블록 안의 `![..](..)`. 위키링크나 임베드와 겹치면 그쪽이 처리함 (BLOG-33 가정 11)
+const readHtmlImages = (
+  { body, syntax }: LinkContext,
+  wikilinks: readonly Range[],
+): MarkdownImage[] =>
+  syntax.html.flatMap((html) => {
+    const source = body.slice(html.start, html.end);
+    return [...source.matchAll(HTML_IMAGE)]
+      .map((match) => {
+        const [whole, alt, angled, plain] = match;
+        const start = html.start + match.index;
+        const url = angled ?? plain;
+        return { start, end: start + whole.length, alt, url, inHtml: true };
+      })
+      .filter((image) =>
+        wikilinks.every((wikilink) => !overlaps(wikilink, image)),
+      );
   });
 
 // 외부 이미지는 앞의 !를 지워 일반 링크로 바꾸고 주소와 제목 원문은 그대로 둠. 대체 텍스트가 없으면 주소를 글자로 넣음 (4-2 1절, 4-3 A7)
@@ -127,9 +148,10 @@ const convertMarkdownImage = (
   image: MarkdownImage,
   result: ImageEdits,
 ) => {
-  const { start, end, alt, url, title } = image;
+  const { start, end, alt, url, title, inHtml } = image;
   // http도 https처럼 링크로 바꿈. 나머지 스킴은 대체 텍스트만 남김 (4-3 A7, BLOG-33 가정 5)
-  const external = WEB_URL.test(url);
+  // HTML 블록 안에서는 링크가 동작하지 않으므로 외부 이미지도 대체 텍스트만 남김 (BLOG-33 가정 11)
+  const external = !inHtml && WEB_URL.test(url);
   if (external) {
     convertExternal(context, image, result);
     return;
@@ -141,20 +163,26 @@ const convertMarkdownImage = (
     return;
   }
   const { path } = href.target;
-  const vaultImage = { start, end, path, alt, title, inHtml: false };
+  const vaultImage = { start, end, path, alt, title, inHtml };
   convertVaultImage(context, vaultImage, result);
 };
 
 // 첨부 파일 임베드와 표준 마크다운 이미지를 웹 주소의 이미지나 글자로 바꾸고, 남긴 이미지의 경로를 모음 (4-2 1절, 2절, 4-3 A2)
+// wikilinks는 임베드를 포함한 모든 위키링크의 범위
 export const convertImages = (
   context: LinkContext,
   embeds: readonly Wikilink[],
+  wikilinks: readonly Range[],
 ): ImageEdits => {
   const result: ImageEdits = { edits: [], warnings: [], attachments: [] };
   for (const embed of embeds) {
     convertVaultImage(context, fromEmbed(context, embed), result);
   }
-  for (const image of readImages(context.syntax)) {
+  const images = [
+    ...readImages(context.syntax),
+    ...readHtmlImages(context, wikilinks),
+  ];
+  for (const image of images) {
     convertMarkdownImage(context, image, result);
   }
   return result;

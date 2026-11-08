@@ -34,11 +34,12 @@ export const convertLinks = (
   const wikilinks = findWikilinks(context);
   const embeds = findEmbeds(context);
   assertNoLeftovers(context, wikilinks);
+  const allWikilinks = [...wikilinks, ...embeds];
   const links = [
     convertWikilinks(context, wikilinks),
-    convertMarkdownLinks(context, [...wikilinks, ...embeds]),
+    convertMarkdownLinks(context, allWikilinks),
   ];
-  const images = convertImages(context, embeds);
+  const images = convertImages(context, embeds, allWikilinks);
   const edits = [
     ...links.flatMap((step) => step.edits),
     ...images.edits,
