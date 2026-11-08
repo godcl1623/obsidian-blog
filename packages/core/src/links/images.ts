@@ -99,23 +99,23 @@ const readImages = ({ images, defined }: LinkSyntax): MarkdownImage[] =>
     };
   });
 
-// HTML 블록 안의 `![..](..)`. 위키링크나 임베드와 겹치면 그쪽이 처리함 (BLOG-33 가정 11)
+// HTML 블록 안의 `![..](..)` (BLOG-33 가정 11)
+// 주소나 제목에 위키링크가 들어 있으면 위키링크만 바뀌고 이미지 문법이 주소째 남으므로 예외로 그 노트를 보류하게 함 (2절, BLOG-33 가정 12)
 const readHtmlImages = (
   { body, syntax }: LinkContext,
   wikilinks: readonly Range[],
 ): MarkdownImage[] =>
   syntax.html.flatMap((html) => {
     const source = body.slice(html.start, html.end);
-    return [...source.matchAll(HTML_IMAGE)]
-      .map((match) => {
-        const [whole, alt, angled, plain] = match;
-        const start = html.start + match.index;
-        const url = angled ?? plain;
-        return { start, end: start + whole.length, alt, url, inHtml: true };
-      })
-      .filter((image) =>
-        wikilinks.every((wikilink) => !overlaps(wikilink, image)),
-      );
+    return [...source.matchAll(HTML_IMAGE)].map((match) => {
+      const [whole, alt, angled, plain] = match;
+      const start = html.start + match.index;
+      const url = angled ?? plain;
+      const image = { start, end: start + whole.length, alt, url };
+      const swallowed = wikilinks.some((wikilink) => overlaps(wikilink, image));
+      if (swallowed) throw new Error("위키링크가 든 이미지가 HTML 안에 있음");
+      return { ...image, inHtml: true };
+    });
   });
 
 // 외부 이미지는 앞의 !를 지워 일반 링크로 바꾸고 주소와 제목 원문은 그대로 둠. 대체 텍스트가 없으면 주소를 글자로 넣음 (4-2 1절, 4-3 A7)

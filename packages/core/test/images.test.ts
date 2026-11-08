@@ -426,6 +426,18 @@ describe("외부 이미지와 볼트 밖 주소", () => {
   ]);
 });
 
+describe("HTML 블록 안 이미지에 위키링크가 들어 있으면 노트를 보류함 (2절, BLOG-33 가정 12)", () => {
+  it.each([
+    ["주소", "![x]([[dev/note]])"],
+    ["제목", "![x](secret/a.png '[[secret/plan]]')"],
+  ])("%s", (_name, inner) => {
+    const body = `<details>\n${inner}\n</details>\n`;
+    expect(() => convert(body)).toThrow(
+      "위키링크가 든 이미지가 HTML 안에 있음",
+    );
+  });
+});
+
 // 앞의 판정이 뒤의 판정을 가림. 맞바꿀 수 있는 쌍마다 행을 둠
 describe("판정 순서", () => {
   it.each<[string, string, ImageVerdict]>([
