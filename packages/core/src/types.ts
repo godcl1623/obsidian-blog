@@ -101,12 +101,15 @@ export interface MarkdownNode {
 
 // 링크 판정에 쓰는 구문 트리 정보. code는 코드(펜스, 들여쓰기, 인라인), html은 HTML 노드의 범위
 // links는 인라인 링크, 자동 링크, 참조 링크. images는 인라인 이미지와 참조 이미지
+// definitions는 모든 참조 정의, defined는 이름마다 쓰이는 처음 정의, imageOnly는 참조 이미지만 쓰는 정의의 이름
 export interface LinkSyntax {
   code: Range[];
   html: Range[];
   links: MarkdownNode[];
   images: MarkdownNode[];
   definitions: MarkdownNode[];
+  defined: ReadonlyMap<string, MarkdownNode>;
+  imageOnly: ReadonlySet<string>;
 }
 
 // 이미지 하나의 정보. 이미지 헤더는 extractor가 읽어 넘김 (blog-plan.md 4-2 1절, 5절, 4-3 A9)

@@ -6,7 +6,6 @@ import type {
   Href,
   LinkContext,
   LinkEdits,
-  LinkSyntax,
   MarkdownNode,
   Range,
   Resolution,
@@ -84,28 +83,19 @@ const warnBlock = (result: LinkEdits, judged: Judged, line: number) => {
   if (block) result.warnings.push({ message: WARNING.BLOCK_REFERENCE, line });
 };
 
-// 참조 이미지만 쓰는 정의의 이름. 참조 이미지는 정의를 풀어 따로 바꾸므로(images.ts) 노트 대상에 넣지 않음 (BLOG-33)
-const imageOnlyIdentifiers = ({ links, images }: LinkSyntax) => {
-  const linked = new Set(links.map(({ identifier }) => identifier));
-  const referenced = images
-    .filter(({ type }) => type === "imageReference")
-    .map(({ identifier = "" }) => identifier);
-  return new Set(referenced.filter((identifier) => !linked.has(identifier)));
-};
-
 // 참조 정의 `[이름]: 주소`: 링크가 남으면 주소를 바꾸고, 아니면 정의를 지움. 정의가 비공개 경로를 담고 있으므로 남기지 않음 (4-2 2절)
-// 같은 이름의 정의가 여럿이면 처음 것만 쓰임(CommonMark)
+// 참조 링크가 남는지는 이름마다 쓰이는 처음 정의(defined)로 정함
 const convertDefinitions = (
   context: LinkContext,
   result: LinkEdits,
 ): Map<string, boolean> => {
   const kept = new Map<string, boolean>();
-  const imageOnly = imageOnlyIdentifiers(context.syntax);
-  for (const definition of context.syntax.definitions) {
+  const { definitions, defined, imageOnly } = context.syntax;
+  for (const definition of definitions) {
     const { url = "", identifier = "", label, title } = definition;
     const judged = judge(url, context.publicPaths);
     const keep = keeps(judged);
-    const first = !kept.has(identifier);
+    const first = defined.get(identifier) === definition;
     if (first) kept.set(identifier, keep);
     const range = rangeOf(definition);
     const { url: converted } = judged.resolution;

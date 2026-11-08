@@ -9,7 +9,6 @@ import type {
   ImageVerdict,
   LinkContext,
   LinkSyntax,
-  MarkdownNode,
   Range,
   Wikilink,
 } from "../types";
@@ -86,20 +85,8 @@ const fromEmbed = (
     : { ...image, alt: alias };
 };
 
-// 같은 이름의 정의가 여럿이면 처음 것만 쓰임(CommonMark)
-const firstDefinitions = (definitions: readonly MarkdownNode[]) => {
-  const first = new Map<string, MarkdownNode>();
-  for (const definition of definitions) {
-    const { identifier = "" } = definition;
-    const known = first.has(identifier);
-    if (!known) first.set(identifier, definition);
-  }
-  return first;
-};
-
-const readImages = ({ images, definitions }: LinkSyntax): MarkdownImage[] => {
-  const defined = firstDefinitions(definitions);
-  return images.map((node) => {
+const readImages = ({ images, defined }: LinkSyntax): MarkdownImage[] =>
+  images.map((node) => {
     const isReference = node.type === "imageReference";
     const source = isReference ? defined.get(node.identifier ?? "") : node;
     return {
@@ -109,7 +96,6 @@ const readImages = ({ images, definitions }: LinkSyntax): MarkdownImage[] => {
       title: source?.title,
     };
   });
-};
 
 // 외부 이미지는 앞의 !를 지워 일반 링크로 바꾸고 주소와 제목 원문은 그대로 둠. 대체 텍스트가 없으면 주소를 글자로 넣음 (4-2 1절, 4-3 A7)
 // 링크 안에는 링크를 둘 수 없으므로 링크 안의 외부 이미지는 글자만 남김

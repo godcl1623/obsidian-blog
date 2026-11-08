@@ -16,10 +16,33 @@ const CODE_TYPES = ["code", "inlineCode"] as const;
 const LINK_TYPES = ["link", "linkReference"] as const;
 const IMAGE_TYPES = ["image", "imageReference"] as const;
 
+// 같은 이름의 정의가 여럿이면 처음 것만 쓰임(CommonMark)
+const firstDefinitions = (definitions: readonly MarkdownNode[]) => {
+  const first = new Map<string, MarkdownNode>();
+  for (const definition of definitions) {
+    const { identifier = "" } = definition;
+    const known = first.has(identifier);
+    if (!known) first.set(identifier, definition);
+  }
+  return first;
+};
+
+// 참조 이미지만 쓰는 정의의 이름. 참조 이미지는 정의를 풀어 따로 바꾸므로(images.ts) 노트 대상에 넣지 않음 (BLOG-33)
+const imageOnlyIdentifiers = (
+  links: readonly MarkdownNode[],
+  images: readonly MarkdownNode[],
+) => {
+  const linked = new Set(links.map(({ identifier }) => identifier));
+  const referenced = images
+    .filter(({ type }) => type === "imageReference")
+    .map(({ identifier = "" }) => identifier);
+  return new Set(referenced.filter((identifier) => !linked.has(identifier)));
+};
+
 // 코드 안은 처리하지 않으므로 범위만 모음 (4-2 1절). 이미지는 자식이 없음(대체 텍스트는 alt 문자열)
 // 링크는 안쪽 글자에 위키링크와 이미지가 있을 수 있으므로 자식도 봄
 export const readSyntax = (body: string): LinkSyntax => {
-  const syntax: LinkSyntax = {
+  const syntax: Omit<LinkSyntax, "defined" | "imageOnly"> = {
     code: [],
     html: [],
     links: [],
@@ -53,7 +76,11 @@ export const readSyntax = (body: string): LinkSyntax => {
     node.children?.forEach(visit);
   };
   visit(processor.parse(body));
-  return syntax;
+  return {
+    ...syntax,
+    defined: firstDefinitions(syntax.definitions),
+    imageOnly: imageOnlyIdentifiers(syntax.links, syntax.images),
+  };
 };
 
 export const contains = (outer: Range, inner: Range): boolean =>
