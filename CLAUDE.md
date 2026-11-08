@@ -45,7 +45,7 @@ Obsidian 볼트의 공개 노트만 골라 기술 블로그로 내보내는 프�
 
 - 티켓 하나에 워크트리 하나. 브랜치는 `develop`에서 따고 이름은 `{종류}/{티켓키}-{짧은-설명}`. 종류는 feature, chore, fix 등 작업에 맞는 낱말이며 `feature/`로 고정하지 않는다 (예: `feature/BLOG-12-link-rules`)
 - Jira 프로젝트 키는 `BLOG`. `준비됨` 라벨이 있고 상태가 "할 일"인 티켓만 가져가며, JQL(`labels = "준비됨"`)로 확인한다. 라벨은 사용자가 대화에서 티켓 내용을 확정했을 때만 붙인다 (라벨이 없는 티켓은 아직 쓰는 중임). 에픽은 가져가지 않고, 에픽 아래의 작업 티켓만 가져간다
-- 시작은 `start-task`, PR 제출은 `submit-task`, 병합 뒤 정리는 `finish-task` 스킬로 한다 (`~/.claude/skills/`). 스킬·에이전트·훅의 원본은 하네스 원본 저장소(agent-harness)이며 `~/.claude`에는 설치본만 둔다. 설치본은 직접 고치지 않고, 회고에서 승인된 전역 항목은 원본을 고쳐 커밋한 뒤 다시 설치한다. 훅이 읽는 프로젝트 값(비공개 폴더, 티켓 브랜치, 상태 이름, 검증 명령)은 저장소 루트 `harness.json`이 맡는다. 아래는 이 프로젝트에서 스킬에 보충할 값이다
+- 시작은 `start-task`, 완료 조건·완료 검토·설계 검토는 `review-task`, PR 제출은 `submit-task`, 병합 뒤 정리는 `finish-task` 스킬로 한다. 에픽의 마지막 작업 티켓을 정리하면 `finish-task`가 `review-epic`을 새 세션으로 열고, 필수 지적이 남지 않으면 `review-epic`이 `epic-retro`를 연다 (`~/.claude/skills/`). 스킬·에이전트·훅의 원본은 하네스 원본 저장소(agent-harness)이며 `~/.claude`에는 설치본만 둔다. 설치본은 직접 고치지 않고, 회고에서 승인된 전역 항목은 원본을 고쳐 커밋한 뒤 다시 설치한다. 훅이 읽는 프로젝트 값(비공개 폴더, 티켓 브랜치, 상태 이름, 검증 명령)은 저장소 루트 `harness.json`이 맡는다. 아래는 이 프로젝트에서 스킬에 보충할 값이다
   - 사전 조건: `.claude/docs/private`가 없으면 작업하지 않고 알린다
   - 워크트리: 메인 체크아웃 옆 `../obsidian-blog-{티켓키}`. post-checkout 훅이 `.claude/docs/private` 링크를 만든다. 지우기 전에 이 링크를 `unlink`로 먼저 뗀다 (원본 보호)
   - 완료 검토(`review-completion`) 5번 질문: 실제 노트는 가짜 볼트와 CANARY 유출 검사로 확인한다. 볼트 원본은 열지 않는다
