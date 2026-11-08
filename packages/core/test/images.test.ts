@@ -289,6 +289,12 @@ describe("이미지 정보로 판정함", () => {
       warnings: [warn(UNSUPPORTED_IMAGE, 5)],
     },
   ]);
+
+  it("큰 이미지 경고 문구는 기준값으로 만듦 (4-2 1절, BLOG-33 가정 3)", () => {
+    expect(LARGE_IMAGE).toBe(
+      "1MB 또는 가로 2,560px를 넘는 이미지를 그대로 내보냄",
+    );
+  });
 });
 
 describe("표준 마크다운 이미지에도 같은 규칙", () => {

@@ -15,6 +15,12 @@ export const PRIVATE = { kind: "private" } as const satisfies Decision;
 // 확장자 .md는 대소문자를 구분하지 않음 (BLOG-30 가정 8)
 export const NOTE_EXTENSION = /\.md$/i;
 
+// 넘으면 경고만 하고 그대로 내보냄. 줄이는 일은 사람이 함. 1MB는 1,048,576바이트 (blog-plan.md 4-2 1절, 4-3 A9, BLOG-33 가정 3)
+const MEGABYTE = 1_048_576;
+const MAX_IMAGE_MEGABYTES = 1;
+export const MAX_IMAGE_BYTES = MAX_IMAGE_MEGABYTES * MEGABYTE;
+export const MAX_IMAGE_WIDTH = 2_560;
+
 // 경고는 알림으로 나가므로 고정 문구만 담음. 지운 내용은 넣지 않음 (blog-plan.md 4-2 2절)
 export const WARNING = {
   UNCLOSED_COMMENT: "닫히지 않은 %% 주석을 노트 끝까지 지움",
@@ -25,7 +31,7 @@ export const WARNING = {
   UNSUPPORTED_IMAGE: "지원하지 않는 형식의 이미지를 뺌",
   NO_IMAGE_INFO: "이미지 정보가 없는 이미지를 뺌",
   GPS_IMAGE: "GPS 정보가 있는 이미지를 뺌",
-  LARGE_IMAGE: "1MB 또는 가로 2,560px를 넘는 이미지를 그대로 내보냄",
+  LARGE_IMAGE: `${MAX_IMAGE_MEGABYTES}MB 또는 가로 ${MAX_IMAGE_WIDTH.toLocaleString("en-US")}px를 넘는 이미지를 그대로 내보냄`,
   EXTERNAL_IMAGE: "외부 이미지를 링크로 바꿈",
 } as const;
 
