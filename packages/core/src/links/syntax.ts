@@ -16,10 +16,16 @@ const CODE_TYPES = ["code", "inlineCode"] as const;
 const LINK_TYPES = ["link", "linkReference"] as const;
 const IMAGE_TYPES = ["image", "imageReference"] as const;
 
-// 코드 안은 처리하지 않으므로 범위만 모음 (4-2 1절). 이미지는 BLOG-33이 다루므로 건너뜀
-// 링크는 안쪽 글자에 위키링크가 있을 수 있으므로 자식도 봄
+// 코드 안은 처리하지 않으므로 범위만 모음 (4-2 1절). 이미지는 자식이 없음(대체 텍스트는 alt 문자열)
+// 링크는 안쪽 글자에 위키링크와 이미지가 있을 수 있으므로 자식도 봄
 export const readSyntax = (body: string): LinkSyntax => {
-  const syntax: LinkSyntax = { code: [], html: [], links: [], definitions: [] };
+  const syntax: LinkSyntax = {
+    code: [],
+    html: [],
+    links: [],
+    images: [],
+    definitions: [],
+  };
   const visit = (node: MarkdownNode) => {
     const { type } = node;
     const isCode = CODE_TYPES.some((codeType) => codeType === type);
@@ -33,7 +39,10 @@ export const readSyntax = (body: string): LinkSyntax => {
       return;
     }
     const isImage = IMAGE_TYPES.some((imageType) => imageType === type);
-    if (isImage) return;
+    if (isImage) {
+      syntax.images.push(node);
+      return;
+    }
     const isDefinition = type === "definition";
     if (isDefinition) {
       syntax.definitions.push(node);

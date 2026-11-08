@@ -21,7 +21,23 @@ export const WARNING = {
   UNCLOSED_HTML_COMMENT: "닫히지 않은 HTML 주석을 지움",
   BLOCK_REFERENCE: "블록 참조를 노트 링크로 바꿈",
   NOTE_EMBED: "노트 임베드를 링크로 바꿈",
+  MEDIA_EMBED: "PDF, 오디오, 동영상 임베드를 파일 이름으로 바꿈",
+  UNSUPPORTED_IMAGE: "지원하지 않는 형식의 이미지를 뺌",
+  NO_IMAGE_INFO: "이미지 정보가 없는 이미지를 뺌",
+  GPS_IMAGE: "GPS 정보가 있는 이미지를 뺌",
+  LARGE_IMAGE: "1MB 또는 가로 2,560px를 넘는 이미지를 그대로 내보냄",
+  EXTERNAL_IMAGE: "외부 이미지를 링크로 바꿈",
 } as const;
+
+// 내보내는 이미지 형식. 형식을 바꾸지 않고 대소문자를 구분하지 않음 (blog-plan.md 4-2 1절, 4-3 A9, BLOG-33 가정 2)
+export const IMAGE_EXTENSION = /\.(?:png|jpe?g|gif|webp|avif)$/i;
+
+// Obsidian이 이미지로 임베드하지만 내보내지 않는 형식. SVG는 XSS 위험으로 막음 (4-2 1절, BLOG-33 가정 4)
+export const UNSUPPORTED_IMAGE_EXTENSION = /\.(?:bmp|svg)$/i;
+
+// 내보내지 않고 파일 이름만 남기는 PDF, 오디오, 동영상 (4-2 1절, 4-3 A2)
+export const MEDIA_EXTENSION =
+  /\.(?:flac|m4a|mp3|ogg|wav|webm|3gp|mkv|mov|mp4|ogv|pdf)$/i;
 
 // 원문 범위를 모으는 마크다운 노드 종류: 코드(펜스, 들여쓰기, 인라인)와 HTML
 export const SPAN_TYPES = ["code", "inlineCode", "html"] as const;

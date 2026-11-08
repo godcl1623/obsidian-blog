@@ -19,9 +19,15 @@ const NFD = "한글".normalize("NFD");
 
 const { BLOCK_REFERENCE, NOTE_EMBED } = WARNING;
 
+// 이미지 규칙은 images.test.ts가 봄. 여기서는 볼트에 첨부 파일이 없음
+const NO_ATTACHMENTS = {
+  paths: new Set<string>(),
+  images: new Map(),
+} as const;
+
 // frontmatter 없는 노트이므로 본문 n번째 줄이 노트의 n번째 줄임
 const convert = (body: string, publicPaths = PUBLIC): Converted =>
-  convertLinks(stripHidden(body), publicPaths);
+  convertLinks(stripHidden(body), publicPaths, NO_ATTACHMENTS);
 
 interface Row {
   name: string;
@@ -224,11 +230,12 @@ describe("링크가 되지 않는 대상은 표시 텍스트만 남김", () => {
       body: "<details>\n[글](secret/plan.md) [공개](<dev/Public Note.md>) [밖](https://example.com)\n</details>\n",
       expected: "<details>\n글 공개 밖\n</details>\n",
     },
-    kept(
-      "HTML 블록 안의 이미지는 BLOG-33이 다룸",
-      "4-2 1절",
-      "<details>\n![그림](img/a.png)\n</details>\n",
-    ),
+    {
+      name: "HTML 블록 안의 이미지는 대체 텍스트만",
+      basis: "4-2 1절, BLOG-33 가정 8",
+      body: "<details>\n![그림](img/a.png)\n</details>\n",
+      expected: "<details>\n그림\n</details>\n",
+    },
   ]);
 });
 
@@ -341,12 +348,6 @@ describe("노트 임베드는 일반 링크로 바꾸고 경고함", () => {
       expected: "plan\n",
       warnings: [{ message: NOTE_EMBED, line: 1 }],
     },
-    kept("첨부 파일 임베드는 BLOG-33이 다룸", "4-2 1절", "![[img/a.png]]\n"),
-    kept(
-      "첨부 확장자는 대소문자를 구분하지 않음",
-      "4-2 1절",
-      "![[img/a.PNG|300]] ![[doc/b.pdf]]\n",
-    ),
     {
       name: "점이 있는 노트 이름 임베드는 노트로 봄",
       basis: "4-2 1절, BLOG-32 가정 10",
@@ -358,8 +359,8 @@ describe("노트 임베드는 일반 링크로 바꾸고 경고함", () => {
       ],
     },
     {
-      name: "첨부 목록 밖 확장자는 노트 임베드로 봄(BLOG-33이 정함)",
-      basis: "2절, 4-2 1절, BLOG-32 가정 14",
+      name: "첨부 목록 밖 확장자는 노트 임베드로 봄",
+      basis: "2절, 4-2 1절, BLOG-32 가정 14, BLOG-33 가정 4",
       body: "![[secret/a.tiff]] ![[secret/x.canvas]] ![[secret/y.base]]\n",
       expected: "a\\.tiff x\\.canvas y\\.base\n",
       warnings: [
