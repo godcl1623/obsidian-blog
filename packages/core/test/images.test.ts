@@ -28,9 +28,15 @@ const IMAGES = new Map<string, ImageInfo>([
   ["img/big.gif", { ...SMALL, bytes: 1_048_577 }],
   ["img/wide.webp", { ...SMALL, width: 2_561 }],
   ["img/edge.avif", { gps: false, bytes: 1_048_576, width: 2_560 }],
+  ["img/gps.svg", { ...SMALL, gps: true }],
 ]);
 const VAULT = {
-  paths: new Set([...IMAGES.keys(), "img/noinfo.png", "doc/b.pdf"]),
+  paths: new Set([
+    ...IMAGES.keys(),
+    "img/noinfo.png",
+    "img/noinfo.svg",
+    "doc/b.pdf",
+  ]),
   images: IMAGES,
 } as const;
 
@@ -40,6 +46,7 @@ const {
   LARGE_IMAGE,
   MEDIA_EMBED,
   NO_IMAGE_INFO,
+  NOTE_EMBED,
   UNSUPPORTED_IMAGE,
 } = WARNING;
 
@@ -121,6 +128,21 @@ describe("위키 이미지 임베드를 웹 주소의 이미지로 바꿈", () =
       attachments: ["img/a.png"],
     },
     {
+      name: "대문자 X, 둘째 |, 숫자 앞뒤 공백은 대체 텍스트",
+      basis: "BLOG-33 가정 7, 9",
+      body: "![[img/a.png|300X200]] ![[img/a.png|300|설명]] ![[img/a.png| 300]] ![[img/a.png|300 ]]\n",
+      expected:
+        "![300X200](</assets/img/a.png>) ![300\\|설명](</assets/img/a.png>) ![ 300](</assets/img/a.png>) ![300 ](</assets/img/a.png>)\n",
+      attachments: ["img/a.png"],
+    },
+    {
+      name: "대상 뒤 공백은 대상의 일부라 노트 임베드",
+      basis: "BLOG-33 가정 9",
+      body: "![[img/a.png |300]]\n",
+      expected: "300\n",
+      warnings: [warn(NOTE_EMBED)],
+    },
+    {
       name: "공백과 한글이 있는 경로는 주소만 인코딩",
       basis: "3절, 4-2 1절",
       body: "![[img/공백 있는.png]]\n",
@@ -146,6 +168,13 @@ describe("위키 이미지 임베드를 웹 주소의 이미지로 바꿈", () =
       basis: "4-2 1절",
       body: "[![[img/a.png]]](https://example.com)\n",
       expected: "[![](</assets/img/a.png>)](https://example.com)\n",
+      attachments: ["img/a.png"],
+    },
+    {
+      name: "비공개 링크 안의 임베드는 링크만 지우고 이미지는 남김",
+      basis: "4-2 1절",
+      body: "[![[img/a.png]]](secret/plan.md)\n",
+      expected: "![](</assets/img/a.png>)\n",
       attachments: ["img/a.png"],
     },
   ]);
@@ -318,6 +347,14 @@ describe("외부 이미지와 볼트 밖 주소", () => {
       warnings: [warn(EXTERNAL_IMAGE), warn(EXTERNAL_IMAGE)],
     },
     {
+      name: "대문자 스킴도 외부 이미지",
+      basis: "4-2 1절, BLOG-33 가정 5",
+      body: "![](HTTPS://example.com/a.png)\n",
+      expected:
+        "[HTTPS\\:\\/\\/example\\.com\\/a\\.png](HTTPS://example.com/a.png)\n",
+      warnings: [warn(EXTERNAL_IMAGE)],
+    },
+    {
       name: "참조 외부 이미지는 참조 링크로",
       basis: "4-2 1절",
       body: "![그림][e]\n\n[e]: https://example.com/a.png\n",
@@ -336,6 +373,12 @@ describe("외부 이미지와 볼트 밖 주소", () => {
       basis: "2절, BLOG-33 가정 5",
       body: "![a](obsidian://open?file=x) ![](file:///x/b.png) ![](/Users/x/c.png) ![](mailto:a@example.com) ![e](img/%E0.png)\n",
       expected: "a    e\n",
+    },
+    {
+      name: "스킴 없는 // 주소와 data: 주소는 대체 텍스트만",
+      basis: "2절, BLOG-33 가정 5",
+      body: "![a](//cdn.example.com/a.png) ![b](data:image/png;base64,AAAA)\n",
+      expected: "a b\n",
     },
   ]);
 });
@@ -366,6 +409,16 @@ describe("판정 순서", () => {
     [
       "SVG는 정보가 있어도 뺌",
       "img/x.svg",
+      { kind: "text", warning: UNSUPPORTED_IMAGE },
+    ],
+    [
+      "GPS 정보가 있는 SVG는 형식 경고",
+      "img/gps.svg",
+      { kind: "text", warning: UNSUPPORTED_IMAGE },
+    ],
+    [
+      "정보가 없는 SVG는 형식 경고",
+      "img/noinfo.svg",
       { kind: "text", warning: UNSUPPORTED_IMAGE },
     ],
   ])("%s (4-2 1절, 2절)", (_name, path, expected) => {
