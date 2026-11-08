@@ -458,6 +458,38 @@ describe("HTML 블록 안 이미지가 허용 모양이 아니면 노트를 보�
   });
 });
 
+// 첫 블록만 보는 회귀를 막기 위해 처리할 것을 둘째 블록에만 둠. stripHidden이 남기는 <details>를 씀(<div>는 글자로 바뀜)
+describe("한 노트의 HTML 블록이 여럿이면 모두 봄 (2절, BLOG-33 가정 11, 12, 13)", () => {
+  const first = "<details>\n![](img/a.png)\n</details>\n\n";
+
+  it("둘째 블록의 이미지와 링크도 글자로 바꿈", () => {
+    const body = `${first}<details>\n![그림](CANARY-602/a.png) [글](secret/plan.md)\n</details>\n`;
+    const result = convert(body);
+    expect(result.body).toBe(
+      "<details>\na\\.png\n</details>\n\n<details>\n그림 글\n</details>\n",
+    );
+    expect(JSON.stringify(result)).not.toContain("CANARY");
+    expect(result.attachments).toEqual([]);
+    expect(result.allTargets).toEqual(["secret/plan.md"]);
+  });
+
+  it.each([
+    [
+      "둘째 블록에만 남은 ](",
+      "![](img/a.png CANARY-601)",
+      "읽지 못한 링크가 HTML 안에 남음",
+    ],
+    [
+      "둘째 블록에만 위키링크가 든 이미지",
+      "![x]([[dev/note]])",
+      "위키링크가 든 이미지가 HTML 안에 있음",
+    ],
+  ])("%s는 노트를 보류함", (_name, inner, error) => {
+    const body = `${first}<details>\n${inner}\n</details>\n`;
+    expect(() => convert(body)).toThrow(error);
+  });
+});
+
 // 앞의 판정이 뒤의 판정을 가림. 맞바꿀 수 있는 쌍마다 행을 둠
 describe("판정 순서", () => {
   it.each<[string, string, ImageVerdict]>([
