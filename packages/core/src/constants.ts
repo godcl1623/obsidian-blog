@@ -35,6 +35,9 @@ export const IMAGE_EXTENSION = /\.(?:png|jpe?g|gif|webp|avif)$/i;
 // Obsidian이 이미지로 임베드하지만 내보내지 않는 형식. SVG는 XSS 위험으로 막음 (4-2 1절, BLOG-33 가정 4)
 export const UNSUPPORTED_IMAGE_EXTENSION = /\.(?:bmp|svg)$/i;
 
+// 이미지 너비를 넘기는 주소 조각 `#width=300`의 앞부분. 렌더링이 조각을 지우고 width 속성으로 바꿈 (4-2 1절, BLOG-33 가정 1)
+export const WIDTH_FRAGMENT = "#width=";
+
 // 내보내지 않고 파일 이름만 남기는 PDF, 오디오, 동영상 (4-2 1절, 4-3 A2)
 export const MEDIA_EXTENSION =
   /\.(?:flac|m4a|mp3|ogg|wav|webm|3gp|mkv|mov|mp4|ogv|pdf)$/i;

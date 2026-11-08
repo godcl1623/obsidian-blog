@@ -20,5 +20,5 @@
 - `convertLinks`의 `allTargets`에는 비공개 경로가 들어 있으므로 퍼블리싱 환경 DB의 역방향 색인에만 씀. manifest의 링크 목록은 `publicTargets`로만 만듦 (BLOG-32 가정 1)
 - `convertLinks`의 셋째 인자는 볼트 첨부 경로 목록(`checkAssetPaths`가 보류하지 않은 것)과 경로별 이미지 정보(GPS 정보 유무, 바이트, 가로 px)임. 이미지 헤더는 extractor가 읽어 넘김 (blog-plan.md 4-2 5절)
 - `convertLinks`의 `attachments`는 그 노트가 내보내는 첨부 파일 경로이며 뺀 이미지는 들어 있지 않음. 첨부 파일 승인과 참조 횟수 관리는 이것으로만 함 (2절, 4-1 (2))
-- 남긴 이미지의 너비는 주소 조각 `#width=300`으로 넘김. 렌더링이 조각을 지우고 `width` 속성으로 바꿈. 렌더링은 아직 없음 (BLOG-33 가정 1)
+- 남긴 이미지의 너비는 주소 조각 `#width=300`으로 넘김. 렌더링이 조각을 지우고 `width` 속성으로 바꿈. 조각의 앞부분은 `src/constants.ts`의 `WIDTH_FRAGMENT`를 함께 씀. 렌더링은 아직 없음 (BLOG-33 가정 1)
 - 경로 검사(`checkNotePaths`, `checkAssetPaths`)와 노트 판정 사이의 순서는 아직 정하지 않음

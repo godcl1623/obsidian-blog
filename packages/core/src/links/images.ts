@@ -1,4 +1,4 @@
-import { WARNING, WEB_URL } from "../constants";
+import { WARNING, WEB_URL, WIDTH_FRAGMENT } from "../constants";
 import { assetUrl } from "../address/url";
 import { judgeImage } from "./image-rules";
 import { quotedTitle, readHref } from "./markdown-links";
@@ -35,10 +35,10 @@ interface MarkdownImage extends Range {
 
 const fileName = (path: string) => path.split("/").at(-1)!;
 
-// 남기는 이미지는 표준 마크다운 이미지로 둠. 너비는 주소 조각 #width=로 넘기고 렌더링이 width 속성으로 바꿈 (4-2 1절, BLOG-33 가정 1)
+// 남기는 이미지는 표준 마크다운 이미지로 두고 너비는 주소 조각으로 넘김 (4-2 1절, BLOG-33 가정 1)
 const imageMarkdown = ({ path, alt, width, title }: VaultImage) => {
   const hasWidth = width !== undefined;
-  const fragment = hasWidth ? `#width=${width}` : "";
+  const fragment = hasWidth ? `${WIDTH_FRAGMENT}${width}` : "";
   const url = destination(`${assetUrl(path)}${fragment}`);
   return `![${escapeText(alt)}](${url}${quotedTitle(title)})`;
 };
