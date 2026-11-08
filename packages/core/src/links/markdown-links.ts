@@ -1,5 +1,5 @@
-import { EXTERNAL_URL, HTML_IMAGE, HTML_LINK, WARNING } from "../constants";
-import { contains, labelEnd, overlaps, rangeOf } from "./syntax";
+import { EXTERNAL_URL, HTML_HANDLED, HTML_LINK, WARNING } from "../constants";
+import { contains, labelEnd, matchHtml, overlaps, rangeOf } from "./syntax";
 import { destination, parseTarget, resolveTarget } from "./targets";
 import type {
   Edit,
@@ -137,35 +137,39 @@ const convertReference = (
   return keep ? [] : unwrap(body, link);
 };
 
-// HTML 블록 안의 `[글자](주소)`: 공개 여부와 상관없이 안쪽 글자만 남기고, 내부 대상은 모든 대상 칸에 넣음 (2절, BLOG-32 가정 11)
-// 위키링크와 겹치면 위키링크가 처리함
-
 // 바꾸고 남은 `](`나 `]:`는 정규식이 읽지 못한 링크나 참조 정의일 수 있으며 원문 주소가 나갈 수 있음. 위치와 모양을 가리지 않고 예외로 그 노트를 보류하게 함 (2절, BLOG-32 가정 13, 15)
 const HTML_LEFTOVER = /\](?:\(|:)/;
 
-const assertNoHtmlLeftovers = (source: string) => {
-  const rest = source.replace(HTML_LINK, "").replace(HTML_IMAGE, "");
-  const leftover = HTML_LEFTOVER.test(rest);
-  if (leftover) throw new Error("읽지 못한 링크가 HTML 안에 남음");
+const assertNoHtmlLeftovers = ({ body, syntax }: LinkContext) => {
+  for (const { start, end } of syntax.html) {
+    const rest = HTML_HANDLED.reduce(
+      (source, pattern) => source.replace(pattern, ""),
+      body.slice(start, end),
+    );
+    const leftover = HTML_LEFTOVER.test(rest);
+    if (leftover) throw new Error("읽지 못한 링크가 HTML 안에 남음");
+  }
 };
 
+// HTML 블록 안의 `[글자](주소)`: 공개 여부와 상관없이 안쪽 글자만 남기고, 내부 대상은 모든 대상 칸에 넣음 (2절, BLOG-32 가정 11)
+// 위키링크와 겹치면 위키링크가 처리함
 const convertHtmlLinks = (
   context: LinkContext,
   wikilinks: readonly Range[],
   result: LinkEdits,
 ) => {
-  for (const html of context.syntax.html) {
-    const source = context.body.slice(html.start, html.end);
-    assertNoHtmlLeftovers(source);
-    for (const match of source.matchAll(HTML_LINK)) {
-      const [whole, text, angled, plain] = match;
-      const start = html.start + match.index;
-      const range = { start, end: start + whole.length };
-      const swallowed = wikilinks.some((wikilink) => overlaps(wikilink, range));
-      if (swallowed) continue;
-      addNote(result, judge(angled ?? plain, context.publicPaths), false);
-      result.edits.push({ ...range, text });
-    }
+  assertNoHtmlLeftovers(context);
+  const { body, syntax, publicPaths } = context;
+  for (const { start, end, text, url } of matchHtml(
+    body,
+    syntax.html,
+    HTML_LINK,
+  )) {
+    const range = { start, end };
+    const swallowed = wikilinks.some((wikilink) => overlaps(wikilink, range));
+    if (swallowed) continue;
+    addNote(result, judge(url, publicPaths), false);
+    result.edits.push({ ...range, text });
   }
 };
 

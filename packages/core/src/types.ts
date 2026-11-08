@@ -112,6 +112,12 @@ export interface LinkSyntax {
   imageOnly: ReadonlySet<string>;
 }
 
+// HTML 블록 안에서 정규식으로 찾은 `[글자](주소)`나 `![대체 텍스트](주소)` 하나. url은 <>를 벗긴 주소
+export interface HtmlMatch extends Range {
+  text: string;
+  url: string;
+}
+
 // 이미지 하나의 정보. 이미지 헤더는 extractor가 읽어 넘김 (blog-plan.md 4-2 1절, 5절, 4-3 A9)
 export interface ImageInfo {
   gps: boolean;

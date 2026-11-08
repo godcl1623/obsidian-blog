@@ -68,5 +68,8 @@ export const HTML_LINK = new RegExp(
 // 이미지 (4-2 1절, BLOG-33 가정 11)
 export const HTML_IMAGE = new RegExp(`!${HTML_LINK_BODY}`, "g");
 
+// HTML 블록 안에서 읽어 바꾸는 문법. 남은 `](` 검사는 이것들을 지운 뒤에 함. HTML 안에서 읽는 문법을 더하면 여기에도 넣음 (BLOG-32 가정 13)
+export const HTML_HANDLED = [HTML_LINK, HTML_IMAGE] as const;
+
 // 그대로 두는 외부 주소. 나머지 스킴과 경로 목록에 없는 주소는 표시 텍스트만 남김 (blog-plan.md 4-2 1절, 2절, BLOG-32 가정 3)
 export const EXTERNAL_URL = new RegExp(`${WEB_URL.source}|^mailto:`, "i");

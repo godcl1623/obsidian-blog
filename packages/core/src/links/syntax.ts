@@ -1,7 +1,7 @@
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
-import type { LinkSyntax, MarkdownNode, Range } from "../types";
+import type { HtmlMatch, LinkSyntax, MarkdownNode, Range } from "../types";
 
 // 렌더링과 같은 문법(remark-parse, remark-gfm)으로 읽음 (blog-plan.md 4-3 A2)
 const processor = unified().use(remarkParse).use(remarkGfm);
@@ -82,6 +82,20 @@ export const readSyntax = (body: string): LinkSyntax => {
     imageOnly: imageOnlyIdentifiers(syntax.links, syntax.images),
   };
 };
+
+// HTML 블록 안에서 HTML_LINK_BODY 모양(constants.ts)을 찾음. 묶음 1은 글자, 2는 <>나 &lt;>로 감싼 주소, 3은 감싸지 않은 주소 (BLOG-32 가정 16, BLOG-33 가정 13)
+export const matchHtml = (
+  body: string,
+  html: readonly Range[],
+  pattern: RegExp,
+): HtmlMatch[] =>
+  html.flatMap((block) =>
+    [...body.slice(block.start, block.end).matchAll(pattern)].map((match) => {
+      const [whole, text, angled, plain] = match;
+      const start = block.start + match.index;
+      return { start, end: start + whole.length, text, url: angled ?? plain };
+    }),
+  );
 
 export const contains = (outer: Range, inner: Range): boolean =>
   outer.start <= inner.start && inner.end <= outer.end;

@@ -2,7 +2,7 @@ import { HTML_IMAGE, WARNING, WEB_URL, WIDTH_FRAGMENT } from "../constants";
 import { assetUrl } from "../address/url";
 import { judgeImage } from "./image-rules";
 import { quotedTitle, readHref } from "./markdown-links";
-import { contains, insideAny, overlaps, rangeOf } from "./syntax";
+import { contains, insideAny, matchHtml, overlaps, rangeOf } from "./syntax";
 import { destination, escapeText } from "./targets";
 import type {
   ImageEdits,
@@ -105,17 +105,10 @@ const readHtmlImages = (
   { body, syntax }: LinkContext,
   wikilinks: readonly Range[],
 ): MarkdownImage[] =>
-  syntax.html.flatMap((html) => {
-    const source = body.slice(html.start, html.end);
-    return [...source.matchAll(HTML_IMAGE)].map((match) => {
-      const [whole, alt, angled, plain] = match;
-      const start = html.start + match.index;
-      const url = angled ?? plain;
-      const image = { start, end: start + whole.length, alt, url };
-      const swallowed = wikilinks.some((wikilink) => overlaps(wikilink, image));
-      if (swallowed) throw new Error("위키링크가 든 이미지가 HTML 안에 있음");
-      return { ...image, inHtml: true };
-    });
+  matchHtml(body, syntax.html, HTML_IMAGE).map(({ text, ...image }) => {
+    const swallowed = wikilinks.some((wikilink) => overlaps(wikilink, image));
+    if (swallowed) throw new Error("위키링크가 든 이미지가 HTML 안에 있음");
+    return { ...image, alt: text, inHtml: true };
   });
 
 // 외부 이미지는 앞의 !를 지워 일반 링크로 바꾸고 주소와 제목 원문은 그대로 둠. 대체 텍스트가 없으면 주소를 글자로 넣음 (4-2 1절, 4-3 A7)
