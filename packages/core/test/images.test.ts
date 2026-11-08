@@ -423,21 +423,13 @@ describe("판정 순서", () => {
       "secret/없음.png",
       { kind: "text" },
     ],
-    [
-      "정보가 있어도 경로 목록에 없으면 뺌",
-      "held/a.png",
-      { kind: "text" },
-    ],
+    ["정보가 있어도 경로 목록에 없으면 뺌", "held/a.png", { kind: "text" }],
     [
       "경로 목록에 없으면 GPS 경고를 내지 않음",
       "held/gps.png",
       { kind: "text" },
     ],
-    [
-      "경로 목록에 없으면 큰 이미지여도 뺌",
-      "held/big.png",
-      { kind: "text" },
-    ],
+    ["경로 목록에 없으면 큰 이미지여도 뺌", "held/big.png", { kind: "text" }],
     [
       "큰 SVG는 형식 경고",
       "img/big.svg",
