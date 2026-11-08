@@ -29,6 +29,14 @@ const IMAGES = new Map<string, ImageInfo>([
   ["img/wide.webp", { ...SMALL, width: 2_561 }],
   ["img/edge.avif", { gps: false, bytes: 1_048_576, width: 2_560 }],
   ["img/gps.svg", { ...SMALL, gps: true }],
+  ["img/big.svg", { ...SMALL, bytes: 1_048_577 }],
+  ["doc/gps-big.pdf", { gps: true, bytes: 2_000_000, width: 4_000 }],
+]);
+// 정보는 있지만 checkAssetPaths가 보류해 경로 목록에 없는 이미지
+const HELD = new Map<string, ImageInfo>([
+  ["held/a.png", SMALL],
+  ["held/gps.png", { ...SMALL, gps: true }],
+  ["held/big.png", { ...SMALL, bytes: 1_048_577 }],
 ]);
 const VAULT = {
   paths: new Set([
@@ -37,7 +45,7 @@ const VAULT = {
     "img/noinfo.svg",
     "doc/b.pdf",
   ]),
-  images: IMAGES,
+  images: new Map([...IMAGES, ...HELD]),
 } as const;
 
 const {
@@ -136,6 +144,14 @@ describe("위키 이미지 임베드를 웹 주소의 이미지로 바꿈", () =
       attachments: ["img/a.png"],
     },
     {
+      name: "앞자리 0, 빈 가로나 세로, 셋째 값, 전각 숫자는 대체 텍스트",
+      basis: "BLOG-33 가정 7, 10",
+      body: "![[img/a.png|0300]] ![[img/a.png|300x]] ![[img/a.png|x200]] ![[img/a.png|300x200x100]] ![[img/a.png|３００]]\n",
+      expected:
+        "![0300](</assets/img/a.png>) ![300x](</assets/img/a.png>) ![x200](</assets/img/a.png>) ![300x200x100](</assets/img/a.png>) ![３００](</assets/img/a.png>)\n",
+      attachments: ["img/a.png"],
+    },
+    {
       name: "대상 뒤 공백은 대상의 일부라 노트 임베드",
       basis: "BLOG-33 가정 9",
       body: "![[img/a.png |300]]\n",
@@ -193,6 +209,12 @@ describe("경로 목록에 정확히 없는 이미지는 글자로 둠", () => {
       basis: "4-2 1절, BLOG-33 가정 8",
       body: "![[secret/없음.png]] ![[secret/없음.png|300]]\n",
       expected: "없음\\.png 없음\\.png\n",
+    },
+    {
+      name: "정보가 있어도 보류된 경로는 글자",
+      basis: "2절, 4-2 1절",
+      body: "![[held/a.png]]\n",
+      expected: "a\\.png\n",
     },
     {
       name: "대체 텍스트가 있으면 대체 텍스트",
@@ -397,9 +419,34 @@ describe("판정 순서", () => {
       { kind: "text", warning: UNSUPPORTED_IMAGE },
     ],
     [
-      "경로 목록에 없으면 정보를 보지 않음",
+      "경로 목록에 없으면 정보 없음 경고를 내지 않음",
       "secret/없음.png",
       { kind: "text" },
+    ],
+    [
+      "정보가 있어도 경로 목록에 없으면 뺌",
+      "held/a.png",
+      { kind: "text" },
+    ],
+    [
+      "경로 목록에 없으면 GPS 경고를 내지 않음",
+      "held/gps.png",
+      { kind: "text" },
+    ],
+    [
+      "경로 목록에 없으면 큰 이미지여도 뺌",
+      "held/big.png",
+      { kind: "text" },
+    ],
+    [
+      "큰 SVG는 형식 경고",
+      "img/big.svg",
+      { kind: "text", warning: UNSUPPORTED_IMAGE },
+    ],
+    [
+      "GPS 정보가 있는 큰 PDF는 파일 이름과 경고",
+      "doc/gps-big.pdf",
+      { kind: "name", warning: MEDIA_EMBED },
     ],
     [
       "GPS 정보가 있으면 큰 이미지여도 뺌",
