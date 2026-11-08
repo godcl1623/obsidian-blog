@@ -1,4 +1,4 @@
-import { EXTERNAL_URL, HTML_IMAGE, WARNING } from "../constants";
+import { EXTERNAL_URL, HTML_IMAGE, HTML_LINK, WARNING } from "../constants";
 import { contains, labelEnd, overlaps, rangeOf } from "./syntax";
 import { destination, parseTarget, resolveTarget } from "./targets";
 import type {
@@ -137,11 +137,8 @@ const convertReference = (
   return keep ? [] : unwrap(body, link);
 };
 
-// HTML 블록 안의 `[글자](주소)`는 해석기가 링크로 읽지 않음. 공개 여부와 상관없이 안쪽 글자만 남기고, 내부 대상은 모든 대상 칸에 넣음 (2절, BLOG-32 가정 11)
-// 위키링크와 겹치면 위키링크가 처리함. `<주소>`의 <는 stripHidden이 &lt;로 바꿔 둠
-// 이스케이프한 `\[`는 링크가 아님. 주소 앞뒤에는 공백과 탭만, 제목은 따옴표로 감싼 것만 읽고 나머지 모양은 남은 `](`로 보류함 (BLOG-32 가정 16)
-const HTML_LINK =
-  /(?<![!\\])\[([^[\]\n]*)\]\([ \t]*(?:(?:<|&lt;)([^<>\n]*)>|([^\s()]*))(?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'))?[ \t]*\)/g;
+// HTML 블록 안의 `[글자](주소)`: 공개 여부와 상관없이 안쪽 글자만 남기고, 내부 대상은 모든 대상 칸에 넣음 (2절, BLOG-32 가정 11)
+// 위키링크와 겹치면 위키링크가 처리함
 
 // 바꾸고 남은 `](`나 `]:`는 정규식이 읽지 못한 링크나 참조 정의일 수 있으며 원문 주소가 나갈 수 있음. 위치와 모양을 가리지 않고 예외로 그 노트를 보류하게 함 (2절, BLOG-32 가정 13, 15)
 const HTML_LEFTOVER = /\](?:\(|:)/;

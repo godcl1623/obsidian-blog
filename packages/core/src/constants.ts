@@ -54,10 +54,19 @@ export const SPAN_TYPES = ["code", "inlineCode", "html"] as const;
 // 웹 주소. 외부 링크로 그대로 두고, 외부 이미지는 이 주소의 링크로 바꿈 (blog-plan.md 4-2 1절, BLOG-33 가정 5)
 export const WEB_URL = /^https?:\/\//i;
 
-// HTML 블록 안의 이미지 `![대체 텍스트](주소)`. 해석기가 이미지로 읽지 않으므로 정규식으로 찾음 (4-2 1절, BLOG-33 가정 11)
-// 1은 대체 텍스트, 2는 <>나 &lt;>로 감싼 주소, 3은 감싸지 않은 주소. 괄호 안 나머지(제목 등)는 글자에 쓰지 않으므로 읽지 않음
-export const HTML_IMAGE =
-  /!\[([^[\]\n]*)\]\([ \t]*(?:(?:<|&lt;)([^<>()\n]*)>|([^\s()]*))[^()\n]*\)/g;
+// HTML 블록 안의 `[글자](주소)`와 `![대체 텍스트](주소)`는 해석기가 링크나 이미지로 읽지 않으므로 정규식으로 찾음. `<주소>`의 <는 stripHidden이 &lt;로 바꿔 둠
+// 주소 앞뒤에는 공백과 탭만, 제목은 따옴표로 감싼 것만 읽고 나머지 모양은 남은 `](`로 보류함 (BLOG-32 가정 16, BLOG-33 가정 13)
+// 1은 글자, 2는 <>나 &lt;>로 감싼 주소, 3은 감싸지 않은 주소
+const HTML_LINK_BODY = String.raw`\[([^[\]\n]*)\]\([ \t]*(?:(?:<|&lt;)([^<>\n]*)>|([^\s()]*))(?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'))?[ \t]*\)`;
+
+// 이스케이프한 `\[`와 이미지의 `[`는 링크가 아님 (BLOG-32 가정 16)
+export const HTML_LINK = new RegExp(
+  String.raw`(?<![!\\])${HTML_LINK_BODY}`,
+  "g",
+);
+
+// 이미지 (4-2 1절, BLOG-33 가정 11)
+export const HTML_IMAGE = new RegExp(`!${HTML_LINK_BODY}`, "g");
 
 // 그대로 두는 외부 주소. 나머지 스킴과 경로 목록에 없는 주소는 표시 텍스트만 남김 (blog-plan.md 4-2 1절, 2절, BLOG-32 가정 3)
 export const EXTERNAL_URL = new RegExp(`${WEB_URL.source}|^mailto:`, "i");

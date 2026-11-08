@@ -363,10 +363,16 @@ describe("표준 마크다운 이미지에도 같은 규칙", () => {
     {
       name: "HTML 블록 안의 표준 이미지도 위키 임베드와 같은 글자와 경고",
       basis: "2절, 4-2 1절, BLOG-33 가정 11",
-      body: "<details>\n![](img/a.png) ![](img/gps.png) ![*a*](secret/x.png) ![x](https://example.com/c.png) ![](<img/공백 있는.png>)\n</details>\n",
+      body: '<details>\n![](img/a.png) ![](img/gps.png) ![*a*](secret/x.png) ![x](https://example.com/c.png) ![](<img/공백 있는.png>) ![](img/a.png "제목")\n</details>\n',
       expected:
-        "<details>\na\\.png gps\\.png \\*a\\* x 공백 있는\\.png\n</details>\n",
+        "<details>\na\\.png gps\\.png \\*a\\* x 공백 있는\\.png a\\.png\n</details>\n",
       warnings: [warn(GPS_IMAGE, 2)],
+    },
+    {
+      name: "HTML 블록 안에서 꺾쇠 뒤에 글자가 붙으면 통째로 경로로 읽고 파일 이름만 남김",
+      basis: "4-2 1절, BLOG-32 가정 16, BLOG-33 가정 13",
+      body: "<details>\n![](<CANARY-503>/a.png)\n</details>\n",
+      expected: "<details>\na\\.png\n</details>\n",
     },
     {
       name: "같은 이미지는 첨부 목록에 한 번",
@@ -435,6 +441,20 @@ describe("HTML 블록 안 이미지에 위키링크가 들어 있으면 노트�
     expect(() => convert(body)).toThrow(
       "위키링크가 든 이미지가 HTML 안에 있음",
     );
+  });
+});
+
+// 허용 모양 밖의 괄호 안을 주소로 읽으면 폴더 이름 조각이 글자로 나갈 수 있음
+describe("HTML 블록 안 이미지가 허용 모양이 아니면 노트를 보류함 (2절, BLOG-32 가정 16, BLOG-33 가정 13)", () => {
+  it.each([
+    ["꺾쇠 없는 공백 주소", "![](CANARY-501 폴더/a.png)"],
+    ["따옴표 없는 제목", "![](img/a.png CANARY-502)"],
+    ["주소 앞의 줄바꿈 없는 공백", "![](\u00a0CANARY-504/a.png)"],
+    ["주소 앞의 전각 공백", "![](\u3000CANARY-505/a.png)"],
+    ["괄호로 감싼 제목", "![](img/a.png (CANARY-506))"],
+  ])("%s", (_name, inner) => {
+    const body = `<details>\n${inner}\n</details>\n`;
+    expect(() => convert(body)).toThrow("읽지 못한 링크가 HTML 안에 남음");
   });
 });
 
