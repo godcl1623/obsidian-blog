@@ -578,6 +578,12 @@ describe("참조 링크와 정의", () => {
       body: "[[r]]\n\n[r]: https://example.com\n",
       expected: "r\n\n[r]: https://example.com\n",
     },
+    {
+      name: "같은 이름의 정의가 여럿이면 처음 정의로 참조를 판정함",
+      basis: "2절, CommonMark",
+      body: "[글][r]\n\n[r]: secret/x.md\n[r]: dev/note.md\n",
+      expected: "글\n\n\n[r]: </notes/dev/note>\n",
+    },
   ]);
 });
 

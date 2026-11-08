@@ -346,6 +346,13 @@ describe("표준 마크다운 이미지에도 같은 규칙", () => {
       expected: "![그림](</assets/img/a.png>) 설명\n\n\n\n",
       attachments: ["img/a.png"],
     },
+    {
+      name: "같은 이름의 정의가 여럿이면 처음 정의로 풀어 씀",
+      basis: "4-2 1절, CommonMark",
+      body: "![그림][r]\n\n[r]: img/a.png\n[r]: img/x.svg\n",
+      expected: "![그림](</assets/img/a.png>)\n\n\n\n",
+      attachments: ["img/a.png"],
+    },
     kept("코드 안은 그대로", "4-2 1절", "`![](img/a.png)` `![[img/a.png]]`\n"),
     {
       name: "HTML 블록 안은 대체 텍스트만 남기고 첨부 목록에 넣지 않음",
