@@ -10,6 +10,7 @@ export const HOLD_REASON = {
 } as const;
 
 export const PUBLIC = { kind: "public" } as const satisfies Decision;
+
 export const PRIVATE = { kind: "private" } as const satisfies Decision;
 
 // 확장자 .md는 대소문자를 구분하지 않음 (BLOG-30 가정 8)
@@ -20,6 +21,7 @@ const MEGABYTE = 1_048_576;
 const MAX_IMAGE_MEGABYTES = 1;
 
 export const MAX_IMAGE_BYTES = MAX_IMAGE_MEGABYTES * MEGABYTE;
+
 export const MAX_IMAGE_WIDTH = 2_560;
 
 // 경고는 알림으로 나가므로 고정 문구만 담음. 지운 내용은 넣지 않음 (blog-plan.md 4-2 2절)
