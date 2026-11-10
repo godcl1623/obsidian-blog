@@ -1,7 +1,7 @@
 {
-  "commit": "883f211",
+  "commit": "b9d57f8",
   "files": {
     "typescript/conventions.md": "574b7a9b9006caedec8a79bf10f7c1dbe10a34cd90274baba54b9f49882ed75d",
-    "typescript/eslint-rules.mjs": "e60663717c0ac517008f6e1939e3ae5d700f0a83e5743ef35c9922af4238deb2"
+    "typescript/eslint-rules.mjs": "69da730ea41b5e1ec46880593faadcf6ebcc07efa73cd4e97affccf66b02967b"
   }
 }
