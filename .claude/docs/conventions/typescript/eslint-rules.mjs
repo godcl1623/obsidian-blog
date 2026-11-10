@@ -114,6 +114,7 @@ export const commonRules = {
 // - return 앞, if·반복문·switch·try와 블록으로 끝나는 문장 뒤에는 빈 줄을 둠. 블록으로 끝나는 선언(`const f = () => {}`) 뒤도 포함함
 // 블록 맨 앞 문장의 앞은 이 규칙이 보지 않음
 const declarations = ["const", "let"];
+
 export const paddingRules = {
   "@stylistic/padding-line-between-statements": [
     "error",
