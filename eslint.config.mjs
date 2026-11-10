@@ -3,9 +3,11 @@ import { defineConfig } from "eslint/config";
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import globals from "globals";
+import stylistic from "@stylistic/eslint-plugin";
 import {
   baseRules,
   commonRules,
+  paddingRules,
   typeScriptRules,
   typeScriptSyntax,
 } from "./.claude/docs/conventions/typescript/eslint-rules.mjs";
@@ -23,7 +25,8 @@ export default defineConfig(
   },
   {
     files: ["**/*.{ts,js,mjs}"],
-    rules: commonRules,
+    plugins: { "@stylistic": stylistic },
+    rules: { ...commonRules, ...paddingRules },
   },
   {
     files: ["**/*.ts"],
