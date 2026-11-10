@@ -25,6 +25,7 @@ const blocked = lines.filter((line) => {
 
   return rest.length > 0 || !keys.has(key) || !/^\d+$/.test(count ?? "");
 });
+
 const errors = nonEmpty(stderr).length;
 
 const rejected = blocked.length > 0 || errors > 0 || status !== 0;
