@@ -113,9 +113,17 @@ export const commonRules = {
 // TypeScript·JavaScript 파일: 문장 사이 빈 줄. 같은 문장 쌍에 여러 항목이 맞으면 뒤 항목이 이김. @stylistic 플러그인 등록이 필요함
 // - 이어진 const·let·export 문장은 한 덩어리로 보고 덩어리 앞뒤에만 빈 줄을 둠. 다만 export 문장끼리는 빈 줄을 둠. 선언 바로 뒤의 if는 붙여 둘 수 있음
 // - return 앞, if·반복문·switch·try와 블록으로 끝나는 문장 뒤에는 빈 줄을 둠. 블록으로 끝나는 선언(`const f = () => {}`) 뒤도 포함함
-// 블록으로 끝나는 문장은 마지막 토큰이 블록·switch의 `}`인 문장(`block-like`)이라, 콜백 블록을 넘기는 호출(`xs.forEach(() => {});`)과 클래스 식은 들지 않음.
+// - `block-like`는 마지막 토큰이 블록·switch의 `}`인 문장만 고르므로, 함수 블록을 넘기는 호출문(`xs.forEach(() => {});`)과
+//   클래스 식 선언(`const C = class {};`)은 선택자로 더함
 // 블록 맨 앞 문장의 앞은 이 규칙이 보지 않음(prettier가 빈 줄을 지움)
 const declarations = ["const", "let", "export"];
+const callWithBlock = {
+  selector:
+    "ExpressionStatement:matches([expression.type='CallExpression'], [expression.type='AwaitExpression'], [expression.type='ChainExpression']):has(:matches(ArrowFunctionExpression, FunctionExpression) > BlockStatement.body)",
+};
+const classDeclaration = {
+  selector: "VariableDeclaration:has(ClassExpression)",
+};
 
 export const paddingRules = {
   "@stylistic/padding-line-between-statements": [
@@ -128,7 +136,17 @@ export const paddingRules = {
     { blankLine: "always", prev: "*", next: "return" },
     {
       blankLine: "always",
-      prev: ["if", "for", "while", "do", "switch", "try", "block-like"],
+      prev: [
+        "if",
+        "for",
+        "while",
+        "do",
+        "switch",
+        "try",
+        "block-like",
+        callWithBlock,
+        classDeclaration,
+      ],
       next: "*",
     },
   ],
