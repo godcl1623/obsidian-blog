@@ -109,6 +109,27 @@ export const commonRules = {
   "max-params": ["error", 3],
 };
 
+// TypeScript·JavaScript 파일: 문장 사이 빈 줄. 같은 문장 쌍에 여러 항목이 맞으면 뒤 항목이 이김. @stylistic 플러그인 등록이 필요함
+// - 이어진 const·let 선언은 한 덩어리로 보고 덩어리 앞뒤에만 빈 줄을 둠. 선언 바로 뒤의 if는 붙여 둘 수 있음
+// - return 앞, if·반복문·switch·try와 블록으로 끝나는 문장 뒤에는 빈 줄을 둠. 블록으로 끝나는 선언(`const f = () => {}`) 뒤도 포함함
+// 블록 맨 앞 문장의 앞은 이 규칙이 보지 않음
+const declarations = ["const", "let"];
+export const paddingRules = {
+  "@stylistic/padding-line-between-statements": [
+    "error",
+    { blankLine: "always", prev: "*", next: declarations },
+    { blankLine: "always", prev: declarations, next: "*" },
+    { blankLine: "any", prev: declarations, next: declarations },
+    { blankLine: "any", prev: declarations, next: "if" },
+    { blankLine: "always", prev: "*", next: "return" },
+    {
+      blankLine: "always",
+      prev: ["if", "for", "while", "do", "switch", "try", "block-like"],
+      next: "*",
+    },
+  ],
+};
+
 // TypeScript 파일: 객체 타입은 interface로 선언하고, 유니언 등 타입 별칭이 필요할 때만 type을 씀.
 // export 함수는 반환 타입을 적음. @typescript-eslint 플러그인 등록이 필요함
 export const typeScriptRules = {
