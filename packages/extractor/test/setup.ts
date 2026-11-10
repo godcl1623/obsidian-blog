@@ -37,14 +37,17 @@ const check = (path: unknown): void => {
     typeof path === "number" ||
     (typeof path === "object" && path !== null && "fd" in path);
   if (opened) return;
+
   const isUrl = path instanceof URL;
   const target = resolve(isUrl ? fileURLToPath(path) : String(path));
   let real = target;
+
   try {
     real = realpathSync(target);
   } catch {
     // 없는 경로는 읽어도 실패하므로 문자열 경로로 판단함
   }
+
   const inFixtures = (real + sep).startsWith(fixtures);
   if (!inFixtures) {
     throw new Error(`fixtures 밖의 파일을 읽으려 함: ${real}`);
@@ -55,10 +58,12 @@ const guard = <T>(mod: T): T => {
   const wrapped: Record<string, unknown> = {
     ...(mod as Record<string, unknown>),
   };
+
   for (const name of [...reads, ...globs]) {
     const original = wrapped[name];
     const isFunction = typeof original === "function";
     if (!isFunction) continue;
+
     wrapped[name] = (first: unknown, ...rest: unknown[]) => {
       const isGlob = globs.includes(name);
       if (isGlob) {
@@ -70,14 +75,17 @@ const guard = <T>(mod: T): T => {
         const cwd = cwdIsUrl
           ? fileURLToPath(cwdOption)
           : (cwdOption ?? process.cwd());
+
         for (const pattern of [first].flat())
           check(resolve(cwd, String(pattern)));
       } else {
         check(first);
       }
+
       return original(first, ...rest);
     };
   }
+
   // import fs from "node:fs"와 fs.promises로 돌아가는 길도 막음
   for (const key of ["default", "promises"]) {
     const inner = wrapped[key];
@@ -86,6 +94,7 @@ const guard = <T>(mod: T): T => {
       wrapped[key] = guard(inner);
     }
   }
+
   return wrapped as T;
 };
 

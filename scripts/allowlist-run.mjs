@@ -22,6 +22,7 @@ const nonEmpty = (text) => (text ?? "").split("\n").filter((line) => line);
 const lines = nonEmpty(stdout);
 const blocked = lines.filter((line) => {
   const [key, count, ...rest] = line.split("\t");
+
   return rest.length > 0 || !keys.has(key) || !/^\d+$/.test(count ?? "");
 });
 const errors = nonEmpty(stderr).length;
@@ -33,4 +34,5 @@ if (rejected) {
   );
   process.exit(1);
 }
+
 console.log(lines.join("\n"));

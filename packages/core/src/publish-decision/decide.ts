@@ -14,6 +14,7 @@ const checkApproval = (
   approvals: readonly string[],
 ): Decision => {
   const approved = approvals.includes(path);
+
   return approved ? PUBLIC : { kind: "held", reason: HOLD_REASON.UNAPPROVED };
 };
 
@@ -27,12 +28,15 @@ export const decidePublication = (
   const extracted = extractFrontmatter(content);
   const decidedByExtract = "decision" in extracted;
   if (decidedByExtract) return extracted.decision;
+
   const frontmatter = extracted.value;
   const separator = checkLineSeparators(frontmatter);
   if (separator) return separator;
+
   const parsed = parseFrontmatter(frontmatter);
   const decidedByParse = "decision" in parsed;
   if (decidedByParse) return parsed.decision;
+
   return (
     checkPropertyFormat(parsed.value) ??
     checkSettings(frontmatter) ??

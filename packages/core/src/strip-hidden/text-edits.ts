@@ -12,5 +12,6 @@ export const toOriginal = (
 ): number =>
   history.reduceRight((at, { start, end, text }) => {
     const afterEdit = at >= start + text.length;
+
     return afterEdit ? at + end - start - text.length : Math.min(at, start);
   }, position);

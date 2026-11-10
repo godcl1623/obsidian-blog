@@ -10,9 +10,11 @@ export const splitNote = (content: string): NoteParts => {
   const lines = parts.filter((_, index) => index % 2 === 0);
   const hasFrontmatter = lines[0] === "---";
   if (!hasFrontmatter) return { body: content, lineOffset: 0 };
+
   const end = lines.indexOf("---", 1);
   const unclosed = end === -1;
   if (unclosed) throw new Error(HOLD_REASON.BROKEN);
+
   return {
     frontmatter: lines.slice(1, end).join("\n"),
     body: parts.slice(2 * end + 2).join(""),
@@ -28,12 +30,15 @@ const readText = (
   const node = doc.get(key, true);
   const scalar = isScalar(node);
   if (!scalar) return;
+
   const { value, range } = node;
   const isNull = value === null;
   if (isNull) return;
+
   const isString = typeof value === "string";
   const written = isString ? value : text.slice(range![0], range![1]);
   const empty = written === "";
+
   return empty ? undefined : written;
 };
 
@@ -41,11 +46,14 @@ const readText = (
 export const readProperties = (frontmatter: string | undefined): Properties => {
   const absent = frontmatter === undefined;
   if (absent) return {};
+
   const parsed = parseFrontmatter(frontmatter);
   const broken = "decision" in parsed;
   if (broken) throw new Error(HOLD_REASON.BROKEN);
+
   const title = readText(parsed.value, "title");
   const description = readText(parsed.value, "description");
+
   return {
     ...(title !== undefined && { title }),
     ...(description !== undefined && { description }),

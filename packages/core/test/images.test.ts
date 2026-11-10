@@ -76,6 +76,7 @@ const table = (rows: Row[]) =>
     "$name ($basis)",
     ({ body, expected, warnings = [], attachments = [] }) => {
       const result = convert(body);
+
       expect(result.body).toBe(expected);
       expect(result.warnings).toEqual(warnings);
       expect(result.attachments).toEqual(attachments);
@@ -438,6 +439,7 @@ describe("HTML 블록 안 이미지에 위키링크가 들어 있으면 노트�
     ["제목", "![x](secret/a.png '[[secret/plan]]')"],
   ])("%s", (_name, inner) => {
     const body = `<details>\n${inner}\n</details>\n`;
+
     expect(() => convert(body)).toThrow(
       "위키링크가 든 이미지가 HTML 안에 있음",
     );
@@ -454,6 +456,7 @@ describe("HTML 블록 안 이미지가 허용 모양이 아니면 노트를 보�
     ["괄호로 감싼 제목", "![](img/a.png (CANARY-506))"],
   ])("%s", (_name, inner) => {
     const body = `<details>\n${inner}\n</details>\n`;
+
     expect(() => convert(body)).toThrow("읽지 못한 링크가 HTML 안에 남음");
   });
 });
@@ -465,6 +468,7 @@ describe("한 노트의 HTML 블록이 여럿이면 모두 봄 (2절, BLOG-33 �
   it("둘째 블록의 이미지와 링크도 글자로 바꿈", () => {
     const body = `${first}<details>\n![그림](CANARY-602/a.png) [글](secret/plan.md)\n</details>\n`;
     const result = convert(body);
+
     expect(result.body).toBe(
       "<details>\na\\.png\n</details>\n\n<details>\n그림 글\n</details>\n",
     );
@@ -486,6 +490,7 @@ describe("한 노트의 HTML 블록이 여럿이면 모두 봄 (2절, BLOG-33 �
     ],
   ])("%s는 노트를 보류함", (_name, inner, error) => {
     const body = `${first}<details>\n${inner}\n</details>\n`;
+
     expect(() => convert(body)).toThrow(error);
   });
 });
@@ -575,6 +580,7 @@ describe("뺀 이미지와 비공개 경로의 흔적이 가공 결과에 남지
 
   it("본문, 경고, 대상 목록, 첨부 목록에 표식이 없음 (2절, 4-2 6절)", () => {
     const result = convertLinks(stripHidden(body), PUBLIC, vault);
+
     expect(result.body).not.toContain("CANARY");
     expect(JSON.stringify(result)).not.toContain("CANARY");
     expect(result.attachments).toEqual(["img/a.png"]);

@@ -9,12 +9,14 @@ export const parseTarget = (raw: string): LinkTarget => {
   const fragment = rest.join("#");
   const block = fragment.startsWith("^");
   const headings = block ? [] : rest.filter((heading) => heading !== "");
+
   return { path, headings, block };
 };
 
 // 볼트 경로 목록과 맞춰 볼 노트 경로. `.md`가 없으면 붙임 (BLOG-32 가정 8)
 export const notePath = (path: string): string => {
   const hasExtension = NOTE_EXTENSION.test(path);
+
   return hasExtension ? path : `${path}.md`;
 };
 
@@ -26,6 +28,7 @@ export const noteName = (path: string): string =>
 const anchor = ({ headings }: LinkTarget): string => {
   const last = headings.at(-1);
   const hasHeading = last !== undefined;
+
   return hasHeading ? `#${encodeURIComponent(headingSlug(last))}` : "";
 };
 
@@ -39,8 +42,10 @@ export const resolveTarget = (
   const sameNote = target.path === "";
   const noAnchor = fragment === "";
   if (sameNote) return noAnchor ? {} : { url: fragment };
+
   const note = notePath(target.path);
   const isPublic = publicPaths.has(note);
+
   return isPublic ? { url: `${noteUrl(note)}${fragment}`, note } : { note };
 };
 
@@ -50,6 +55,7 @@ export const defaultText = (target: LinkTarget): string => {
   const parts = sameNote
     ? target.headings
     : [noteName(target.path), ...target.headings];
+
   return parts.join(" > ");
 };
 

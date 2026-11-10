@@ -594,6 +594,7 @@ describe("지운 내용은 결과 어디에도 남지 않음", () => {
       "publish: true\ntitle: 보임\ntags: [CANARY-011]\naliases: [CANARY-012]\nsecret: CANARY-013",
     );
     const result = stripHidden(content);
+
     expect(JSON.stringify(result)).not.toContain("CANARY");
     expect(result.warnings.length).toBeGreaterThan(0);
   });
@@ -624,6 +625,7 @@ describe("가공 본문의 위치를 원본 노트의 줄 번호로 바꿈", () 
     },
   ])("$name (BLOG-32 가정 2)", ({ body, expected }) => {
     const result = stripHidden(note(body));
+
     expect(result.lineAt(result.body.indexOf("표식"))).toBe(expected);
   });
 });

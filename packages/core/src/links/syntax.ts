@@ -19,11 +19,13 @@ const IMAGE_TYPES = ["image", "imageReference"] as const;
 // 같은 이름의 정의가 여럿이면 처음 것만 쓰임(CommonMark)
 const firstDefinitions = (definitions: readonly MarkdownNode[]) => {
   const first = new Map<string, MarkdownNode>();
+
   for (const definition of definitions) {
     const { identifier = "" } = definition;
     const known = first.has(identifier);
     if (!known) first.set(identifier, definition);
   }
+
   return first;
 };
 
@@ -36,6 +38,7 @@ const imageOnlyIdentifiers = (
   const referenced = images
     .filter(({ type }) => type === "imageReference")
     .map(({ identifier = "" }) => identifier);
+
   return new Set(referenced.filter((identifier) => !linked.has(identifier)));
 };
 
@@ -54,28 +57,39 @@ export const readSyntax = (body: string): LinkSyntax => {
     const isCode = CODE_TYPES.some((codeType) => codeType === type);
     if (isCode) {
       syntax.code.push(rangeOf(node));
+
       return;
     }
+
     const isHtml = type === "html";
     if (isHtml) {
       syntax.html.push(rangeOf(node));
+
       return;
     }
+
     const isImage = IMAGE_TYPES.some((imageType) => imageType === type);
     if (isImage) {
       syntax.images.push(node);
+
       return;
     }
+
     const isDefinition = type === "definition";
     if (isDefinition) {
       syntax.definitions.push(node);
+
       return;
     }
+
     const isLink = LINK_TYPES.some((linkType) => linkType === type);
     if (isLink) syntax.links.push(node);
+
     node.children?.forEach(visit);
   };
+
   visit(processor.parse(body));
+
   return {
     ...syntax,
     defined: firstDefinitions(syntax.definitions),
@@ -93,6 +107,7 @@ export const matchHtml = (
     [...body.slice(block.start, block.end).matchAll(pattern)].map((match) => {
       const [whole, text, angled, plain] = match;
       const start = block.start + match.index;
+
       return { start, end: start + whole.length, text, url: angled ?? plain };
     }),
   );
@@ -113,5 +128,6 @@ export const insideAny = (
 export const labelEnd = (node: MarkdownNode): number => {
   const { children = [] } = node;
   const last = children.at(-1);
+
   return last ? rangeOf(last).end : rangeOf(node).start + 1;
 };

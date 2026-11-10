@@ -16,6 +16,7 @@ export const cleanBody = (original: string): CleanedBody => {
     body = applyEdit(body, edit);
     history.push(edit);
   };
+
   while (true) {
     const found = findComment(body);
     if (found) {
@@ -23,13 +24,16 @@ export const cleanBody = (original: string): CleanedBody => {
       const offset = toOriginal(edit.start, history);
       const line = original.slice(0, offset).split("\n").length;
       if (warning) warnings.push({ message: warning, line });
+
       apply(edit);
       continue;
     }
+
     // 뒤의 편집부터 적용해 앞 편집의 위치가 그대로 맞게 함
     const tags = findTagEdits(body);
     const settled = tags.length === 0;
     if (settled) return { body, warnings, history };
+
     tags.reverse().forEach(apply);
   }
 };

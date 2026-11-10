@@ -11,6 +11,7 @@ import type { Decision, ParsedFrontmatter, Step } from "../types";
 
 const held = (line?: number): Decision => {
   const noLine = line === undefined;
+
   return noLine
     ? { kind: "held", reason: HOLD_REASON.BROKEN }
     : { kind: "held", reason: HOLD_REASON.BROKEN, line };
@@ -21,9 +22,11 @@ export const extractFrontmatter = (content: string): Step<string> => {
   const lines = content.split(/\r?\n/);
   const hasFrontmatter = lines[0] === "---";
   if (!hasFrontmatter) return { decision: PRIVATE };
+
   const end = lines.indexOf("---", 1);
   const unclosed = end === -1;
   if (unclosed) return { decision: held(1) };
+
   return { value: lines.slice(1, end).join("\n") };
 };
 
@@ -35,6 +38,7 @@ export const checkLineSeparators = (
   const separator = frontmatter.search(/[\r\u2028\u2029]/);
   const noSeparator = separator === -1;
   if (noSeparator) return;
+
   return held(frontmatter.slice(0, separator).split("\n").length + 1);
 };
 
@@ -43,7 +47,9 @@ export const parseFrontmatter = (text: string): Step<ParsedFrontmatter> => {
   const doc = parseDocument(text, { lineCounter });
   const [error] = doc.errors;
   if (!error) return { value: { text, doc, lineCounter } };
+
   const pos = error.linePos?.[0];
+
   return { decision: held(pos && pos.line + 1) };
 };
 
@@ -65,14 +71,18 @@ export const checkPropertyFormat = ({
   const map = doc.contents;
   const empty = map === null;
   if (empty) return;
+
   const mapping = isMap(map);
   if (!mapping) return heldAt(map);
+
   // JSON 형식은 키에 따옴표가 붙어 정확한 `publish: true` 줄이 생길 수 없으므로, publish를 쓰면 YAML로 바꾸게 보류함
   const publishInJson = map.flow && /publish/i.test(text);
   if (publishInJson) return heldAt(map);
+
   for (const { key, value } of map.items) {
     const oneLineKey = oneLine(key);
     if (!oneLineKey) return heldAt(key as Node);
+
     const list =
       isSeq(value) &&
       value.tag === undefined &&
@@ -81,5 +91,6 @@ export const checkPropertyFormat = ({
     const badValue = value !== null && !oneLine(value) && !list;
     if (badValue) return heldAt(value as Node);
   }
+
   return;
 };

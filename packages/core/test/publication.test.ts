@@ -14,8 +14,10 @@ const PUBLIC = { kind: "public" } as const satisfies Decision;
 const PRIVATE = { kind: "private" } as const satisfies Decision;
 const held = (reason: HoldReason, line?: number): Decision => {
   const noLine = line === undefined;
+
   return noLine ? { kind: "held", reason } : { kind: "held", reason, line };
 };
+
 const { BROKEN, UNAPPROVED } = HOLD_REASON;
 
 interface Row {
@@ -330,6 +332,7 @@ describe("frontmatter를 YAML로 읽을 수 없으면 보류", () => {
       "---\npublish: true\ntitle: [CANARY-201\n---\n",
       APPROVED,
     );
+
     expect(JSON.stringify(decision)).not.toContain("CANARY-201");
   });
 });

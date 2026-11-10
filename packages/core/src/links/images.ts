@@ -40,12 +40,14 @@ const imageMarkdown = ({ path, alt, width, title }: VaultImage) => {
   const hasWidth = width !== undefined;
   const fragment = hasWidth ? `${WIDTH_FRAGMENT}${width}` : "";
   const url = destination(`${assetUrl(path)}${fragment}`);
+
   return `![${escapeText(alt)}](${url}${quotedTitle(title)})`;
 };
 
 // 뺀 이미지의 글자: 대체 텍스트, 없으면 파일 이름(폴더 경로 없음). PDF, 오디오, 동영상은 파일 이름만 (4-2 1절, BLOG-33 가정 8)
 const fallbackText = ({ kind }: ImageVerdict, { path, alt }: VaultImage) => {
   const nameOnly = kind === "name" || alt === "";
+
   return escapeText(nameOnly ? fileName(path) : alt);
 };
 
@@ -53,6 +55,7 @@ const fallbackText = ({ kind }: ImageVerdict, { path, alt }: VaultImage) => {
 const verdictFor = (context: LinkContext, image: VaultImage): ImageVerdict => {
   const verdict = judgeImage(image.path, context.vault);
   const hidden = image.inHtml && verdict.kind === "image";
+
   return hidden ? { kind: "text" } : verdict;
 };
 
@@ -66,9 +69,12 @@ const convertVaultImage = (
   const warned = warning !== undefined;
   const line = context.lineAt(image.start);
   if (warned) result.warnings.push({ message: warning, line });
+
   const kept = verdict.kind === "image";
   if (kept) result.attachments.push(image.path);
+
   const text = kept ? imageMarkdown(image) : fallbackText(verdict, image);
+
   result.edits.push({ start: image.start, end: image.end, text });
 };
 
@@ -81,6 +87,7 @@ const fromEmbed = (
   const sized = size !== null;
   const inHtml = insideAny(start, context.syntax.html);
   const image = { start, end, path: target.path, inHtml };
+
   return sized
     ? { ...image, alt: "", width: size[1] }
     : { ...image, alt: alias };
@@ -90,6 +97,7 @@ const readImages = ({ images, defined }: LinkSyntax): MarkdownImage[] =>
   images.map((node) => {
     const isReference = node.type === "imageReference";
     const source = isReference ? defined.get(node.identifier ?? "") : node;
+
     return {
       ...rangeOf(node),
       alt: node.alt ?? "",
@@ -108,6 +116,7 @@ const readHtmlImages = (
   matchHtml(body, syntax.html, HTML_IMAGE).map(({ text, ...image }) => {
     const swallowed = wikilinks.some((wikilink) => overlaps(wikilink, image));
     if (swallowed) throw new Error("위키링크가 든 이미지가 HTML 안에 있음");
+
     return { ...image, alt: text, inHtml: true };
   });
 
@@ -120,7 +129,9 @@ const convertExternal = (
 ) => {
   const { start, end, alt, url } = image;
   const line = context.lineAt(start);
+
   result.warnings.push({ message: WARNING.EXTERNAL_IMAGE, line });
+
   const noAlt = alt === "";
   const text = escapeText(noAlt ? url : alt);
   const inLink = context.syntax.links.some((link) =>
@@ -128,8 +139,10 @@ const convertExternal = (
   );
   if (inLink) {
     result.edits.push({ start, end, text });
+
     return;
   }
+
   result.edits.push({ start, end: start + 1, text: "" });
   if (noAlt) result.edits.push({ start: start + 2, end: start + 2, text });
 };
@@ -147,16 +160,21 @@ const convertMarkdownImage = (
   const external = !inHtml && WEB_URL.test(url);
   if (external) {
     convertExternal(context, image, result);
+
     return;
   }
+
   const href = readHref(url);
   const internal = href.kind === "internal";
   if (!internal) {
     result.edits.push({ start, end, text: escapeText(alt) });
+
     return;
   }
+
   const { path } = href.target;
   const vaultImage = { start, end, path, alt, title, inHtml };
+
   convertVaultImage(context, vaultImage, result);
 };
 
@@ -168,15 +186,19 @@ export const convertImages = (
   wikilinks: readonly Range[],
 ): ImageEdits => {
   const result: ImageEdits = { edits: [], warnings: [], attachments: [] };
+
   for (const embed of embeds) {
     convertVaultImage(context, fromEmbed(context, embed), result);
   }
+
   const images = [
     ...readImages(context.syntax),
     ...readHtmlImages(context, wikilinks),
   ];
+
   for (const image of images) {
     convertMarkdownImage(context, image, result);
   }
+
   return result;
 };
