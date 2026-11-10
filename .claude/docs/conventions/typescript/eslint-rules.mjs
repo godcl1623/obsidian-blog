@@ -115,7 +115,7 @@ export const commonRules = {
 // - return 앞, if·반복문·switch·try와 블록으로 끝나는 문장 뒤에는 빈 줄을 둠. 블록으로 끝나는 선언(`const f = () => {}`) 뒤도 포함함
 // - `block-like`는 마지막 토큰이 블록·switch의 `}`인 문장만 고르므로, 다음은 선택자로 더함. 한 줄 문장도 포함함
 //   - 함수 블록이나 클래스 식을 담은 문장: 종류(호출, 선언, export, 대입, new, void)와 상관없음(`const ys = xs.map(() => {...});`, `g(() => {});`)
-//   - class·interface·enum·namespace 선언
+//   - class·interface·enum·namespace·`declare module` 선언(본문 없는 `declare module "*.css";` 포함)과 중괄호 타입(`{ ... }`)을 담은 type 별칭
 // 블록 맨 앞 문장의 앞은 이 규칙이 보지 않음(prettier가 빈 줄을 지움)
 const declarations = ["const", "let", "export"];
 const withBlock = {
@@ -124,7 +124,7 @@ const withBlock = {
 };
 const blockDeclaration = {
   selector:
-    ":matches(ClassDeclaration, TSInterfaceDeclaration, TSEnumDeclaration, TSModuleDeclaration)",
+    ":matches(ClassDeclaration, TSInterfaceDeclaration, TSEnumDeclaration, TSModuleDeclaration, TSTypeAliasDeclaration:has(TSTypeLiteral))",
 };
 
 export const paddingRules = {
