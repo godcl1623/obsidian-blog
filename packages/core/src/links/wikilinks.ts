@@ -1,4 +1,9 @@
-import { WARNING } from "../constants";
+import {
+  IMAGE_EXTENSION,
+  MEDIA_EXTENSION,
+  UNSUPPORTED_IMAGE_EXTENSION,
+  WARNING,
+} from "../constants";
 import { contains, insideAny, labelEnd, overlaps, rangeOf } from "./syntax";
 import {
   defaultText,
@@ -10,29 +15,29 @@ import {
 import type {
   LinkContext,
   LinkEdits,
-  LinkTarget,
   MarkdownNode,
   Range,
+  Wikilink,
 } from "../types";
 
 // `[[...]]`와 `![[...]]`. 안쪽에는 대괄호와 줄바꿈이 없음
 const WIKILINK = /(!?)\[\[([^[\]\n]+)\]\]/g;
 
-// 첨부 파일 임베드는 BLOG-33이 다룸. Obsidian이 임베드하는 이미지, 오디오, 동영상, PDF 확장자만 첨부로 보고 나머지(`v1.2` 등)는 노트 이름으로 봄 (4-2 1절, BLOG-32 가정 10)
-const ATTACHMENT =
-  /\.(?:avif|bmp|gif|jpe?g|png|svg|webp|flac|m4a|mp3|ogg|wav|webm|3gp|mkv|mov|mp4|ogv|pdf)$/i;
+// Obsidian이 임베드하는 이미지, 오디오, 동영상, PDF 확장자만 첨부로 보고 나머지(`v1.2`, `.tiff` 등)는 노트 이름으로 봄 (4-2 1절, BLOG-32 가정 10, BLOG-33 가정 4)
+const ATTACHMENT_EXTENSIONS = [
+  IMAGE_EXTENSION,
+  UNSUPPORTED_IMAGE_EXTENSION,
+  MEDIA_EXTENSION,
+] as const;
 
 const isAttachment = (wikilink: Wikilink) =>
-  wikilink.embed && ATTACHMENT.test(wikilink.target.path);
+  wikilink.embed &&
+  ATTACHMENT_EXTENSIONS.some((extension) =>
+    extension.test(wikilink.target.path),
+  );
 
 const readAll = (body: string) =>
   [...body.matchAll(WIKILINK)].map(readWikilink);
-
-interface Wikilink extends Range {
-  embed: boolean;
-  target: LinkTarget;
-  alias?: string;
-}
 
 // 별칭은 처음 | 뒤. 표 안에서 쓰는 \|의 \는 대상에서 뺌. 빈 별칭은 없는 것으로 봄 (Obsidian 문법)
 const readWikilink = (match: RegExpExecArray): Wikilink => {
@@ -61,14 +66,20 @@ const fitsLinks = (wikilink: Range, links: readonly MarkdownNode[]) =>
     return apart || contains(label, wikilink) || contains(wikilink, range);
   });
 
-// 코드 밖의 위키링크를 찾음. 첨부 파일 임베드는 BLOG-33이 다루므로 뺌 (4-2 1절)
-export const findWikilinks = ({ body, syntax }: LinkContext): Wikilink[] =>
+// 코드 밖에서 해석기가 위키링크로 읽는 것 (4-2 1절)
+const readOutsideCode = ({ body, syntax }: LinkContext) =>
   readAll(body).filter((wikilink) => {
     const inCode = insideAny(wikilink.start, syntax.code);
-    return (
-      !inCode && !isAttachment(wikilink) && fitsLinks(wikilink, syntax.links)
-    );
+    return !inCode && fitsLinks(wikilink, syntax.links);
   });
+
+// 노트로 가는 위키링크와 노트 임베드. 첨부 파일 임베드는 findEmbeds가 찾음
+export const findWikilinks = (context: LinkContext): Wikilink[] =>
+  readOutsideCode(context).filter((wikilink) => !isAttachment(wikilink));
+
+// 첨부 파일 임베드 `![[폴더/이미지.png]]` (4-2 1절)
+export const findEmbeds = (context: LinkContext): Wikilink[] =>
+  readOutsideCode(context).filter(isAttachment);
 
 // 바꾸지 못하고 남는 `[[`는 정규식이 읽지 못한 위키링크이며 비공개 경로가 원문 그대로 나갈 수 있음. 예외로 그 노트를 보류하게 함 (2절, BLOG-32 가정 10)
 // 코드 안과 첨부 파일 임베드는 뺌

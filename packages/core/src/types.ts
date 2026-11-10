@@ -96,15 +96,47 @@ export interface MarkdownNode {
   title?: string | null;
   identifier?: string;
   label?: string | null;
+  alt?: string | null;
 }
 
 // 링크 판정에 쓰는 구문 트리 정보. code는 코드(펜스, 들여쓰기, 인라인), html은 HTML 노드의 범위
-// links는 인라인 링크, 자동 링크, 참조 링크. 이미지는 BLOG-33이 다루므로 담지 않음
+// links는 인라인 링크, 자동 링크, 참조 링크. images는 인라인 이미지와 참조 이미지
+// definitions는 모든 참조 정의, defined는 이름마다 쓰이는 처음 정의, imageOnly는 참조 이미지만 쓰는 정의의 이름
 export interface LinkSyntax {
   code: Range[];
   html: Range[];
   links: MarkdownNode[];
+  images: MarkdownNode[];
   definitions: MarkdownNode[];
+  defined: ReadonlyMap<string, MarkdownNode>;
+  imageOnly: ReadonlySet<string>;
+}
+
+// HTML 블록 안에서 정규식으로 찾은 `[글자](주소)`나 `![대체 텍스트](주소)` 하나. url은 <>를 벗긴 주소
+export interface HtmlMatch extends Range {
+  text: string;
+  url: string;
+}
+
+// 이미지 하나의 정보. 이미지 헤더는 extractor가 읽어 넘김 (blog-plan.md 4-2 1절, 5절, 4-3 A9)
+export interface ImageInfo {
+  gps: boolean;
+  bytes: number;
+  width: number;
+}
+
+// 첨부 파일 판정에 쓰는 볼트 정보 (BLOG-33)
+// paths: 볼트의 첨부 파일 경로 가운데 checkAssetPaths가 보류하지 않은 것. images: 경로별 이미지 정보
+export interface VaultAttachments {
+  paths: ReadonlySet<string>;
+  images: ReadonlyMap<string, ImageInfo>;
+}
+
+// 이미지 하나의 판정 (BLOG-33)
+// image는 남김, text는 대체 텍스트(없으면 파일 이름), name은 파일 이름만 글자로 남김
+export interface ImageVerdict {
+  kind: "image" | "text" | "name";
+  warning?: WarningMessage;
 }
 
 // 위키링크나 마크다운 링크가 가리키는 곳. path가 빈 문자열이면 같은 노트임
@@ -112,6 +144,19 @@ export interface LinkTarget {
   path: string;
   headings: string[];
   block: boolean;
+}
+
+// 표준 마크다운 링크나 이미지의 주소를 판정한 결과. external은 그대로 둠
+export type Href =
+  | { kind: "external" }
+  | { kind: "blocked" }
+  | { kind: "internal"; target: LinkTarget };
+
+// `[[...]]`나 `![[...]]` 하나. alias는 처음 | 뒤이며 빈 별칭은 없는 것으로 봄
+export interface Wikilink extends Range {
+  embed: boolean;
+  target: LinkTarget;
+  alias?: string;
 }
 
 // 대상을 판정한 결과. url이 없으면 표시 텍스트만 남김. note는 같은 노트가 아닐 때 대상 노트 경로
@@ -138,15 +183,25 @@ export interface LinkContext {
   body: string;
   syntax: LinkSyntax;
   publicPaths: ReadonlySet<string>;
+  vault: VaultAttachments;
   lineAt: (offset: number) => number;
+}
+
+// 이미지 판정 단계의 결과. attachments는 남긴 이미지의 볼트 경로
+export interface ImageEdits {
+  edits: Edit[];
+  warnings: Warning[];
+  attachments: string[];
 }
 
 // 링크를 바꾼 결과 (BLOG-32 가정 1)
 // allTargets: 모든 내부 대상(공개, 비공개, 볼트에 없는 대상). 비공개 경로가 들어 있으므로 퍼블리싱 환경 DB의 역방향 색인에만 씀
 // publicTargets: 실제 링크로 바뀐 공개 대상. manifest의 공개 노트 사이 링크 목록은 이것으로만 만듦
+// attachments: 이 노트가 참조해 내보내는 첨부 파일 경로. 뺀 이미지는 넣지 않음. 승인과 참조 횟수 관리에 씀 (2절, 4-1 (2), BLOG-33)
 export interface Converted {
   body: string;
   warnings: Warning[];
   allTargets: string[];
   publicTargets: string[];
+  attachments: string[];
 }
