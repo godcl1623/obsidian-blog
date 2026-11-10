@@ -14,14 +14,18 @@ const valueToSource = (body: string, { start, end, value }: Span) => {
   const aligned =
     sameLineCount && source.every((line, index) => line.endsWith(lines[index]));
   if (!aligned) throw new Error("HTML 위치를 원문과 맞출 수 없음");
+
   const lineStarts: number[] = [];
   let at = start;
+
   source.forEach((line, index) => {
     lineStarts.push(at + line.length - lines[index].length);
     at += line.length + 1;
   });
+
   return (position: number) => {
     const before = value.slice(0, position).split("\n");
+
     return lineStarts[before.length - 1] + before[before.length - 1].length;
   };
 };
@@ -30,16 +34,20 @@ const valueToSource = (body: string, { start, end, value }: Span) => {
 // 해석기가 컨테이너 표시를 뺀 값에서 태그를 찾으므로 인용 안에서도 줄 앞의 >를 태그 끝으로 읽지 않음. 편집은 앞에서 뒤 순서로 돌려줌
 export const findTagEdits = (body: string): Edit[] => {
   const edits: Edit[] = [];
+
   for (const span of findSpans(body)) {
     const isHtml = span.type === "html";
     if (!isHtml) continue;
+
     const { value } = span;
     const toSource = valueToSource(body, span);
     // 찾는 위치가 매번 뒤로 가므로 반복이 끝남
     let start = value.indexOf("<");
+
     while (true) {
       const notFound = start === -1;
       if (notFound) break;
+
       const tag = ALLOWED_TAG.exec(value.slice(start));
       const end = start + (tag ? tag[0].length : 1);
       const text = tag ? `<${tag[1]}${tag[2].toLowerCase()}>` : "&lt;";
@@ -47,8 +55,10 @@ export const findTagEdits = (body: string): Edit[] => {
       const to = toSource(end - 1) + 1;
       const changed = body.slice(from, to) !== text;
       if (changed) edits.push({ start: from, end: to, text });
+
       start = value.indexOf("<", end);
     }
   }
+
   return edits;
 };

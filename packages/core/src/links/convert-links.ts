@@ -33,7 +33,9 @@ export const convertLinks = (
   const context = { body, syntax, publicPaths, vault, lineAt };
   const wikilinks = findWikilinks(context);
   const embeds = findEmbeds(context);
+
   assertNoLeftovers(context, wikilinks);
+
   const allWikilinks = [...wikilinks, ...embeds];
   const links = [
     convertWikilinks(context, wikilinks),
@@ -50,6 +52,7 @@ export const convertLinks = (
     ...images.warnings,
   ];
   const notes = links.flatMap((step) => step.notes);
+
   return {
     body: applyEdits(body, edits),
     warnings: warnings.sort((a, b) => a.line - b.line),

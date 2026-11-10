@@ -15,7 +15,9 @@ const find = (text: string, where: string): Hit[] =>
 const fail = (hits: Hit[]): void => {
   const none = hits.length === 0;
   if (none) return;
+
   const lines = hits.map(({ canary, where }) => `  ${canary} ${where}`);
+
   throw new Error(`CANARY 표식이 출력에 남음:\n${lines.join("\n")}`);
 };
 
@@ -28,9 +30,11 @@ export const assertNoCanaryInDir = (dir: string): void => {
   // 출력 경로가 잘못돼 빈 폴더를 검사하고 통과하는 일을 막음
   const empty = files.length === 0;
   if (empty) throw new Error(`검사할 파일이 없음: ${dir}`);
+
   fail(
     files.flatMap((entry) => {
       const path = join(entry.parentPath, entry.name);
+
       return find(readFileSync(path, "latin1"), relative(dir, path));
     }),
   );

@@ -10,8 +10,10 @@ export const stripHidden = (content: string): Stripped => {
   const cleaned = cleanBody(body);
   const lineAt = (offset: number) => {
     const original = toOriginal(offset, cleaned.history);
+
     return body.slice(0, original).split("\n").length + lineOffset;
   };
+
   return {
     body: cleaned.body,
     ...readProperties(frontmatter),

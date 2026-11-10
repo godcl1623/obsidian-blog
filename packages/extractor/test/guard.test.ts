@@ -17,6 +17,7 @@ describe("fixtures 밖 읽기 차단", () => {
 
   it("이름 앞부분이 fixtures인 형제 폴더도 밖으로 봄", () => {
     const sibling = new URL("fixtures-other/a.md", import.meta.url);
+
     expect(() => readFileSync(sibling)).toThrow(message);
   });
 
@@ -26,6 +27,7 @@ describe("fixtures 밖 읽기 차단", () => {
 
   it("fixtures 밖의 파일을 복사하면 예외를 던짐", () => {
     const dest = fixture("copy-should-not-exist");
+
     try {
       expect(() => copyFileSync(outside, dest)).toThrow(message);
     } finally {
@@ -35,11 +37,13 @@ describe("fixtures 밖 읽기 차단", () => {
 
   it("fixtures 밖을 glob으로 훑으면 예외를 던짐", () => {
     const cwd = fileURLToPath(new URL("..", import.meta.url));
+
     expect(() => globSync("*.json", { cwd })).toThrow(message);
   });
 
   it("fixtures 안의 파일은 읽힘", () => {
     const inside = fixture("fake-output/clean/a.md");
+
     expect(readFileSync(inside, "utf8")).not.toBe("");
   });
 });

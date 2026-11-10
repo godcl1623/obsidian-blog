@@ -7,5 +7,6 @@ export const checkSettings = (frontmatter: string): Decision | undefined => {
   const privateSet = /^private: true$/m.test(frontmatter);
   const publishSet = /^publish: true$/m.test(frontmatter);
   const notPublic = privateSet || !publishSet;
+
   return notPublic ? PRIVATE : undefined;
 };

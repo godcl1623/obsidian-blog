@@ -86,6 +86,7 @@ export const commonSyntax = [
   inlineTypeRule,
   ...returnRules,
 ];
+
 export const typeScriptSyntax = [...commonSyntax, ...asConstRules];
 
 // 모든 파일: 보이지 않는 문자가 문자열, 정규식, 주석에 실제 문자로 들어가는 것을 막음. 필요하면 \uXXXX 이스케이프로 씀
@@ -107,6 +108,50 @@ export const commonRules = {
   "no-restricted-syntax": ["error", ...commonSyntax],
   // 매개변수가 3개를 넘으면 객체 매개변수 하나로 받음
   "max-params": ["error", 3],
+};
+
+// TypeScript·JavaScript 파일: 문장 사이 빈 줄. 같은 문장 쌍에 여러 항목이 맞으면 뒤 항목이 이김. @stylistic 플러그인 등록이 필요함
+// - 이어진 const·let·export 문장은 한 덩어리로 보고 덩어리 앞뒤에만 빈 줄을 둠. 다만 export 문장끼리는 빈 줄을 둠. 선언 바로 뒤의 if는 붙여 둘 수 있음
+// - return 앞, if·반복문·switch·try와 블록으로 끝나는 문장 뒤에는 빈 줄을 둠. 블록으로 끝나는 선언(`const f = () => {}`) 뒤도 포함함
+// - `block-like`는 마지막 토큰이 블록·switch의 `}`인 문장만 고르므로, 다음은 선택자로 더함. 한 줄 문장도 포함함
+//   - 함수 블록이나 클래스 식을 담은 문장: 종류(호출, 선언, export, 대입, new, void)와 상관없음(`const ys = xs.map(() => {...});`, `g(() => {});`)
+//   - class·interface·enum·namespace·`declare module` 선언(본문 없는 `declare module "*.css";` 포함)과 중괄호 타입(`{ ... }`, 매핑 타입 포함)을 어디든 담은 type 별칭
+// 블록 맨 앞 문장의 앞은 이 규칙이 보지 않음(prettier가 빈 줄을 지움)
+const declarations = ["const", "let", "export"];
+const withBlock = {
+  selector:
+    ":matches(ExpressionStatement, VariableDeclaration, ExportNamedDeclaration, ExportDefaultDeclaration):has(:matches(ArrowFunctionExpression, FunctionExpression) > BlockStatement.body, ClassExpression)",
+};
+const blockDeclaration = {
+  selector:
+    ":matches(ClassDeclaration, TSInterfaceDeclaration, TSEnumDeclaration, TSModuleDeclaration, TSTypeAliasDeclaration:has(TSTypeLiteral, TSMappedType))",
+};
+
+export const paddingRules = {
+  "@stylistic/padding-line-between-statements": [
+    "error",
+    { blankLine: "always", prev: "*", next: declarations },
+    { blankLine: "always", prev: declarations, next: "*" },
+    { blankLine: "any", prev: declarations, next: declarations },
+    { blankLine: "always", prev: "export", next: "export" },
+    { blankLine: "any", prev: declarations, next: "if" },
+    { blankLine: "always", prev: "*", next: "return" },
+    {
+      blankLine: "always",
+      prev: [
+        "if",
+        "for",
+        "while",
+        "do",
+        "switch",
+        "try",
+        "block-like",
+        withBlock,
+        blockDeclaration,
+      ],
+      next: "*",
+    },
+  ],
 };
 
 // TypeScript 파일: 객체 타입은 interface로 선언하고, 유니언 등 타입 별칭이 필요할 때만 type을 씀.

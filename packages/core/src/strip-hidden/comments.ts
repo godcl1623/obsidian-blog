@@ -24,11 +24,14 @@ const inside = (position: number, spans: readonly Span[]) =>
 // 코드 밖에서 처음 나오는 표시의 위치. 없으면 -1. 찾는 위치가 매번 뒤로 가므로 반복이 끝남
 const findOutside = (body: string, mark: string, code: readonly Span[]) => {
   let start = body.indexOf(mark);
+
   while (true) {
     const notFound = start === -1;
     if (notFound) return -1;
+
     const inCode = inside(start, code);
     if (!inCode) return start;
+
     start = body.indexOf(mark, start + 1);
   }
 };
@@ -45,6 +48,7 @@ const removeUntilClose = ({
   const end = body.indexOf(close, start + 2);
   const closeEnd = end + close.length;
   const closed = end !== -1 && closeEnd <= until;
+
   return closed
     ? { edit: remove(start, closeEnd) }
     : { edit: remove(start, until), warning };
@@ -59,6 +63,7 @@ const findPercentComment = (
   const start = findOutside(body, "%%", code);
   const notFound = start === -1;
   if (notFound) return;
+
   return removeUntilClose({
     body,
     start,
@@ -78,7 +83,9 @@ const findHtmlComment = (
   const start = findOutside(body, "<!--", code);
   const notFound = start === -1;
   if (notFound) return;
+
   const node = html.find((span) => inside(start, [span]));
+
   return removeUntilClose({
     body,
     start,
@@ -97,6 +104,7 @@ export const findComment = (body: string): Found | undefined => {
     findPercentComment(body, code),
     findHtmlComment(body, code, html),
   ];
+
   return found
     .filter((item) => item !== undefined)
     .sort((a, b) => a.edit.start - b.edit.start)[0];

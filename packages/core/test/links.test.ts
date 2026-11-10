@@ -40,6 +40,7 @@ interface Row {
 const table = (rows: Row[]) =>
   it.each(rows)("$name ($basis)", ({ body, expected, warnings = [] }) => {
     const result = convert(body);
+
     expect(result.body).toBe(expected);
     expect(result.warnings).toEqual(warnings);
   });
@@ -327,6 +328,7 @@ describe("블록 참조는 노트 링크로 낮추고 경고함", () => {
     );
     const count = (message: string) =>
       warnings.filter((warning) => warning.message === message).length;
+
     expect(count(BLOCK_REFERENCE)).toBe(3);
     expect(count(NOTE_EMBED)).toBe(1);
   });
@@ -407,6 +409,7 @@ describe("HTML 블록 안에 읽지 못한 링크가 남으면 노트를 보류�
     ["줄 가운데의 평범한 [주의]:", "글 [주의]: 글"],
   ])("%s", (_name, inner) => {
     const body = `<details>\n${inner}\n</details>\n`;
+
     expect(() => convert(body)).toThrow("읽지 못한 링크가 HTML 안에 남음");
   });
 });
@@ -617,6 +620,7 @@ describe("나가는 링크 목록 (BLOG-32 가정 1)", () => {
     const html =
       "<details>\n[글](secret/plan.md) [공개](dev/note.md)\n</details>\n";
     const { allTargets, publicTargets } = convert(html);
+
     expect(allTargets).toEqual(["secret/plan.md", "dev/note.md"]);
     expect(publicTargets).toEqual([]);
   });
@@ -631,6 +635,7 @@ describe("나가는 링크 목록 (BLOG-32 가정 1)", () => {
     "HTML 블록 안 허용 모양(%s)은 읽어 모든 대상 칸에 넣음 (BLOG-32 가정 11, 15, 16)",
     (_name, inner) => {
       const result = convert(`<details>\n${inner}\n</details>\n`);
+
       expect(result.body).toBe("<details>\n글\n</details>\n");
       expect(result.allTargets).toEqual(["secret/plan.md"]);
     },
@@ -658,6 +663,7 @@ describe("비공개 대상의 흔적이 가공 결과에 남지 않음", () => {
 
   it("본문, 공개 대상 목록, 경고에 표식이 없음 (4-2 2절, 4-2 6절)", () => {
     const { body: output, warnings, publicTargets } = convert(body);
+
     expect(output).not.toContain("CANARY");
     expect(output).not.toMatch(/canary/i);
     expect(JSON.stringify({ warnings, publicTargets })).not.toMatch(/canary/i);
@@ -677,6 +683,7 @@ describe("편집 적용", () => {
       { start: 0, end: 1, text: "AAA" },
       { start: 2, end: 3, text: "" },
     ];
+
     expect(applyEdits("abc", edits)).toBe("AAAb");
   });
 
@@ -685,6 +692,7 @@ describe("편집 적용", () => {
       { start: 0, end: 1, text: "X" },
       { start: 1, end: 2, text: "Y" },
     ];
+
     expect(applyEdits("abc", edits)).toBe("XYc");
   });
 
@@ -697,6 +705,7 @@ describe("편집 적용", () => {
       { start: 0, end: 2, text: "" },
       { start: 1, end: 3, text: "" },
     ];
+
     expect(() => applyEdits("abc", edits)).toThrow("링크 편집이 겹침");
   });
 });

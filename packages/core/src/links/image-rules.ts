@@ -17,16 +17,22 @@ export const judgeImage = (
 ): ImageVerdict => {
   const media = MEDIA_EXTENSION.test(path);
   if (media) return { kind: "name", warning: WARNING.MEDIA_EMBED };
+
   const supported = IMAGE_EXTENSION.test(path);
   if (!supported) return { kind: "text", warning: WARNING.UNSUPPORTED_IMAGE };
+
   const listed = vault.paths.has(path);
   if (!listed) return { kind: "text" };
+
   const info = vault.images.get(path);
   const known = info !== undefined;
   if (!known) return { kind: "text", warning: WARNING.NO_IMAGE_INFO };
+
   const { gps, bytes, width } = info;
   if (gps) return { kind: "text", warning: WARNING.GPS_IMAGE };
+
   const large = bytes > MAX_IMAGE_BYTES || width > MAX_IMAGE_WIDTH;
+
   return large
     ? { kind: "image", warning: WARNING.LARGE_IMAGE }
     : { kind: "image" };

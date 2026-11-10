@@ -47,6 +47,7 @@ const readWikilink = (match: RegExpExecArray): Wikilink => {
   const raw = hasAlias ? inner.slice(0, bar) : inner;
   const alias = hasAlias ? inner.slice(bar + 1) : "";
   const start = match.index;
+
   return {
     start,
     end: start + whole.length,
@@ -63,6 +64,7 @@ const fitsLinks = (wikilink: Range, links: readonly MarkdownNode[]) =>
     const range = rangeOf(link);
     const apart = !overlaps(range, wikilink);
     const label = { start: range.start + 1, end: labelEnd(link) };
+
     return apart || contains(label, wikilink) || contains(wikilink, range);
   });
 
@@ -70,6 +72,7 @@ const fitsLinks = (wikilink: Range, links: readonly MarkdownNode[]) =>
 const readOutsideCode = ({ body, syntax }: LinkContext) =>
   readAll(body).filter((wikilink) => {
     const inCode = insideAny(wikilink.start, syntax.code);
+
     return !inCode && fitsLinks(wikilink, syntax.links);
   });
 
@@ -105,19 +108,25 @@ export const convertWikilinks = (
   wikilinks: readonly Wikilink[],
 ): LinkEdits => {
   const result: LinkEdits = { edits: [], warnings: [], notes: [] };
+
   for (const { start, end, embed, target, alias } of wikilinks) {
     const { url, note } = resolveTarget(target, context.publicPaths);
     const inHtml = insideAny(start, context.syntax.html);
     const linked = url !== undefined && !inHtml;
     const text = escapeText(alias ?? defaultText(target));
     const replaced = linked ? `[${text}](${destination(url)})` : text;
+
     result.edits.push({ start, end, text: replaced });
+
     const hasNote = note !== undefined;
     if (hasNote) result.notes.push({ path: note, linked });
+
     const line = context.lineAt(start);
     const { block } = target;
     if (block) result.warnings.push({ message: WARNING.BLOCK_REFERENCE, line });
+
     if (embed) result.warnings.push({ message: WARNING.NOTE_EMBED, line });
   }
+
   return result;
 };

@@ -39,7 +39,9 @@ for (const [key, count] of Object.entries(counts)) console.log(key + "\\t" + cou
 
 const run = (keys, source) => {
   const file = join(dir, "count.mjs");
+
   writeFileSync(file, source);
+
   return spawnSync(
     "node",
     [script, keys, "--", "node", file, join(dir, "vault")],
@@ -49,6 +51,7 @@ const run = (keys, source) => {
 
 test("볼트 문자열을 키로 내보내는 집계는 막고 내용을 출력하지 않음", () => {
   const { status, stdout, stderr } = run(".png,none", counter(false));
+
   expect(status).toBe(1);
   expect(stdout + stderr).not.toMatch(/CANARY/);
   // ". CANARY-902 링크"와 확장자 없는 빈 키
@@ -57,6 +60,7 @@ test("볼트 문자열을 키로 내보내는 집계는 막고 내용을 출력�
 
 test("허용 목록으로 묶은 집계는 그대로 내보냄", () => {
   const { status, stdout } = run(".png,none", counter(true));
+
   expect(status).toBe(0);
   expect(stdout.trim().split("\n").sort()).toEqual([
     ".png\t1",
@@ -70,6 +74,7 @@ test("값이 정수가 아니면 막음", () => {
     "name",
     `console.log("name\\t" + process.argv[2]);`,
   );
+
   expect(status).toBe(1);
   expect(stdout).toBe("");
   expect(stderr).not.toMatch(/vault/);
@@ -80,6 +85,7 @@ test("칸이 더 붙으면 막음", () => {
     "files",
     `console.log("files\\t1\\tCANARY-901");`,
   );
+
   expect(status).toBe(1);
   expect(stdout + stderr).not.toMatch(/CANARY/);
 });
@@ -89,6 +95,7 @@ test("표준 오류에 무엇이든 나오면 막음", () => {
     "files",
     `console.log("files\\t1"); console.error("CANARY-901 노트");`,
   );
+
   expect(status).toBe(1);
   expect(stdout + stderr).not.toMatch(/CANARY/);
 });
@@ -98,6 +105,7 @@ test("명령이 실패하면 출력이 맞아도 막음", () => {
     "files",
     `console.log("files\\t1"); process.exit(3);`,
   );
+
   expect(status).toBe(1);
   expect(stdout).toBe("");
 });
@@ -106,5 +114,6 @@ test("구분자 --가 없으면 실행하지 않음", () => {
   const { status } = spawnSync("node", [script, "files", "node", "-v"], {
     encoding: "utf8",
   });
+
   expect(status).toBe(2);
 });

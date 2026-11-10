@@ -3,6 +3,7 @@ import { NOTE_EXTENSION } from "../constants";
 // `a/b/c` → [`a`, `a/b`]
 const folders = (key: string): string[] => {
   const parts = key.split("/");
+
   return parts.slice(1).map((_, i) => parts.slice(0, i + 1).join("/"));
 };
 
@@ -17,12 +18,16 @@ const findConflicts = (
 ): Set<string> => {
   const byKey = new Map<string, string[]>();
   const byFolder = new Map<string, string[]>();
+
   for (const path of paths) {
     const key = toKey(path);
+
     append(byKey, key, path);
     for (const folder of folders(key)) append(byFolder, folder, path);
   }
+
   const conflicts = new Set<string>();
+
   for (const [key, same] of byKey) {
     const inside = byFolder.get(key) ?? [];
     const conflicted = same.length > 1 || inside.length > 0;
@@ -30,6 +35,7 @@ const findConflicts = (
       for (const path of [...same, ...inside]) conflicts.add(path);
     }
   }
+
   return conflicts;
 };
 

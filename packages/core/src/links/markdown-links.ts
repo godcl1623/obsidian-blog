@@ -19,12 +19,15 @@ const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 export const readHref = (url: string): Href => {
   const external = EXTERNAL_URL.test(url);
   if (external) return { kind: "external" };
+
   const hasScheme = SCHEME.test(url);
   const localPath = url.startsWith("/");
   const blocked = hasScheme || localPath;
   if (blocked) return { kind: "blocked" };
+
   try {
     const decoded = url.split("#").map(decodeURIComponent).join("#");
+
     return { kind: "internal", target: parseTarget(decoded) };
   } catch {
     return { kind: "blocked" };
@@ -40,6 +43,7 @@ const judge = (url: string, publicPaths: ReadonlySet<string>): Judged => {
   const href = readHref(url);
   const internal = href.kind === "internal";
   const resolution = internal ? resolveTarget(href.target, publicPaths) : {};
+
   return { href, resolution };
 };
 
@@ -49,6 +53,7 @@ const keeps = ({ href, resolution }: Judged): boolean =>
 
 export const quotedTitle = (title: string | null | undefined): string => {
   const hasTitle = typeof title === "string";
+
   return hasTitle ? ` "${title.replace(/["\\]/g, "\\$&")}"` : "";
 };
 
@@ -60,7 +65,9 @@ const unwrap = (body: string, link: MarkdownNode): Edit[] => {
   const angle = body[start] === "<";
   const bracket = body[start] === "[";
   if (angle) return [{ start, end, text: "" }];
+
   if (!bracket) return [];
+
   return [
     { start, end: start + 1, text: "" },
     { start: labelEnd(link), end, text: "" },
@@ -91,21 +98,26 @@ const convertDefinitions = (
 ): Map<string, boolean> => {
   const kept = new Map<string, boolean>();
   const { definitions, defined, imageOnly } = context.syntax;
+
   for (const definition of definitions) {
     const { url = "", identifier = "", label, title } = definition;
     const judged = judge(url, context.publicPaths);
     const keep = keeps(judged);
     const first = defined.get(identifier) === definition;
     if (first) kept.set(identifier, keep);
+
     const range = rangeOf(definition);
     const { url: converted } = judged.resolution;
     const internal = converted !== undefined;
     const linksNote = !imageOnly.has(identifier);
     if (linksNote) addNote(result, judged, internal);
+
     const rewritten = `[${label}]: ${destination(converted ?? "")}${quotedTitle(title)}`;
     if (!keep) result.edits.push({ ...range, text: "" });
+
     if (internal) result.edits.push({ ...range, text: rewritten });
   }
+
   return kept;
 };
 
@@ -120,10 +132,13 @@ const convertInline = (
   const { url } = judged.resolution;
   const internal = url !== undefined;
   const keep = keeps(judged);
+
   addNote(result, judged, internal);
   warnBlock(result, judged, context.lineAt(start));
+
   const text = `](${destination(url ?? "")}${quotedTitle(link.title)})`;
   if (internal) result.edits.push({ start: labelEnd(link), end, text });
+
   if (!keep) result.edits.push(...unwrap(context.body, link));
 };
 
@@ -134,6 +149,7 @@ const convertReference = (
   kept: Map<string, boolean>,
 ): Edit[] => {
   const keep = kept.get(link.identifier ?? "") === true;
+
   return keep ? [] : unwrap(body, link);
 };
 
@@ -159,7 +175,9 @@ const convertHtmlLinks = (
   result: LinkEdits,
 ) => {
   assertNoHtmlLeftovers(context);
+
   const { body, syntax, publicPaths } = context;
+
   for (const { start, end, text, url } of matchHtml(
     body,
     syntax.html,
@@ -168,6 +186,7 @@ const convertHtmlLinks = (
     const range = { start, end };
     const swallowed = wikilinks.some((wikilink) => overlaps(wikilink, range));
     if (swallowed) continue;
+
     addNote(result, judge(url, publicPaths), false);
     result.edits.push({ ...range, text });
   }
@@ -180,17 +199,22 @@ export const convertMarkdownLinks = (
 ): LinkEdits => {
   const result: LinkEdits = { edits: [], warnings: [], notes: [] };
   const kept = convertDefinitions(context, result);
+
   for (const link of context.syntax.links) {
     const range = rangeOf(link);
     const swallowed = wikilinks.some((wikilink) => contains(wikilink, range));
     if (swallowed) continue;
+
     const isReference = link.type === "linkReference";
     if (isReference) {
       result.edits.push(...convertReference(context.body, link, kept));
       continue;
     }
+
     convertInline(context, link, result);
   }
+
   convertHtmlLinks(context, wikilinks, result);
+
   return result;
 };

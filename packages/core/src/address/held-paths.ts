@@ -12,16 +12,20 @@ const checkPaths = (
 ): Map<string, HoldReason> => {
   const held = new Map<string, HoldReason>();
   const addressable: string[] = [];
+
   for (const path of paths) {
     const address = checkAddress(path);
     const reason = checkNfc(path) ?? address;
     if (reason) held.set(path, reason);
+
     if (!address) addressable.push(path);
   }
+
   for (const path of findConflicts(addressable)) {
     const alreadyHeld = held.has(path);
     if (!alreadyHeld) held.set(path, HOLD_REASON.URL_CONFLICT);
   }
+
   return held;
 };
 
