@@ -1,7 +1,7 @@
 {
-  "commit": "dfdfec6",
+  "commit": "16b4069",
   "files": {
     "typescript/conventions.md": "574b7a9b9006caedec8a79bf10f7c1dbe10a34cd90274baba54b9f49882ed75d",
-    "typescript/eslint-rules.mjs": "74207207b02befb624118c915ea71231d808977577c8ca0a6782f88a5c7c4d18"
+    "typescript/eslint-rules.mjs": "e151f64be7d099605bc69cad1e4d83e9f45a22c5f3656fd6571d086a1d432794"
   }
 }
