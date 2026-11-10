@@ -1,7 +1,7 @@
 {
-  "commit": "744c400",
+  "commit": "fb86d32",
   "files": {
-    "typescript/conventions.md": "3894e6609cea80bd7ab9893754d8a711948e9f4e5e7ec29477bd4be3fcbe4905",
-    "typescript/eslint-rules.mjs": "fc900278f82ea40db2c95f601a300216a34539a52a5c42d57e4a0ce3146c05c3"
+    "typescript/conventions.md": "574b7a9b9006caedec8a79bf10f7c1dbe10a34cd90274baba54b9f49882ed75d",
+    "typescript/eslint-rules.mjs": "64b1115dc62b29978d98b861fc1fc29ef041d816f97bc3c23f15e3add1bca586"
   }
 }

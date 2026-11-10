@@ -86,6 +86,7 @@ export const commonSyntax = [
   inlineTypeRule,
   ...returnRules,
 ];
+
 export const typeScriptSyntax = [...commonSyntax, ...asConstRules];
 
 // 모든 파일: 보이지 않는 문자가 문자열, 정규식, 주석에 실제 문자로 들어가는 것을 막음. 필요하면 \uXXXX 이스케이프로 씀
@@ -110,10 +111,11 @@ export const commonRules = {
 };
 
 // TypeScript·JavaScript 파일: 문장 사이 빈 줄. 같은 문장 쌍에 여러 항목이 맞으면 뒤 항목이 이김. @stylistic 플러그인 등록이 필요함
-// - 이어진 const·let 선언은 한 덩어리로 보고 덩어리 앞뒤에만 빈 줄을 둠. 선언 바로 뒤의 if는 붙여 둘 수 있음
+// - 이어진 const·let·export 문장은 한 덩어리로 보고 덩어리 앞뒤에만 빈 줄을 둠. 다만 export 문장끼리는 빈 줄을 둠. 선언 바로 뒤의 if는 붙여 둘 수 있음
 // - return 앞, if·반복문·switch·try와 블록으로 끝나는 문장 뒤에는 빈 줄을 둠. 블록으로 끝나는 선언(`const f = () => {}`) 뒤도 포함함
-// 블록 맨 앞 문장의 앞은 이 규칙이 보지 않음
-const declarations = ["const", "let"];
+// 블록으로 끝나는 문장은 마지막 토큰이 블록·switch의 `}`인 문장(`block-like`)이라, 콜백 블록을 넘기는 호출(`xs.forEach(() => {});`)과 클래스 식은 들지 않음.
+// 블록 맨 앞 문장의 앞은 이 규칙이 보지 않음(prettier가 빈 줄을 지움)
+const declarations = ["const", "let", "export"];
 
 export const paddingRules = {
   "@stylistic/padding-line-between-statements": [
@@ -121,6 +123,7 @@ export const paddingRules = {
     { blankLine: "always", prev: "*", next: declarations },
     { blankLine: "always", prev: declarations, next: "*" },
     { blankLine: "any", prev: declarations, next: declarations },
+    { blankLine: "always", prev: "export", next: "export" },
     { blankLine: "any", prev: declarations, next: "if" },
     { blankLine: "always", prev: "*", next: "return" },
     {
